@@ -255,6 +255,12 @@
             font-size: 0.95em;
         }
 
+        .section-divider {
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1e3c72;
+        }
+
         .hidden {
             display: none;
         }
@@ -275,36 +281,51 @@
         <div id="schedule" class="tab-content active">
             <h2 style="color: #1e3c72; margin-bottom: 20px;">Weekly Schedule</h2>
             
-            <h3 style="color: #2a5298; margin-top: 20px;">Monday - Friday</h3>
-            <div class="schedule-grid">
-                <div class="schedule-block" onclick="startSession('Front-End AM', 2)">
-                    <h3>Front-End (AM)</h3>
-                    <p>2 hours</p>
-                    <p>🕐 Morning session</p>
-                </div>
-                <div class="schedule-block" onclick="startSession('Back-End PM', 2)">
-                    <h3>Back-End (PM)</h3>
-                    <p>2 hours</p>
-                    <p>🕔 Evening session</p>
-                </div>
+            <div class="section-divider">
+                <h3 style="color: #2a5298;">📖 Courses</h3>
             </div>
-
-            <h3 style="color: #2a5298; margin-top: 30px;">Flexible Schedule</h3>
             <div class="schedule-grid">
+                <div class="schedule-block" onclick="startSession('Back-End Engineering', 4)">
+                    <h3>Back-End Engineering</h3>
+                    <p>4 hours</p>
+                    <p>📅 Mon, Tue, Thu, Fri</p>
+                </div>
+                <div class="schedule-block" onclick="startSession('Python', 2)">
+                    <h3>Python</h3>
+                    <p>2 hours</p>
+                    <p>📅 Tue, Thu</p>
+                </div>
                 <div class="schedule-block" onclick="startSession('Cybersecurity', 2)">
                     <h3>Cybersecurity</h3>
                     <p>2 hours</p>
-                    <p>📅 2x per week</p>
+                    <p>📅 Mon, Fri</p>
                 </div>
-                <div class="schedule-block" onclick="startSession('Python', 4)">
-                    <h3>Python</h3>
-                    <p>4 hours</p>
-                    <p>📅 1x per week</p>
-                </div>
-                <div class="schedule-block" onclick="startSession('Client Work', 1)">
+            </div>
+
+            <div class="section-divider">
+                <h3 style="color: #2a5298;">💼 Work</h3>
+            </div>
+            <div class="schedule-grid">
+                <div class="schedule-block" onclick="startSession('Client Work', 2)">
                     <h3>Client Work</h3>
-                    <p>As needed</p>
-                    <p>💼 3-5 hrs/week</p>
+                    <p>2 hours daily</p>
+                    <p>🕐 Monday - Friday AM</p>
+                </div>
+            </div>
+
+            <div class="section-divider">
+                <h3 style="color: #2a5298;">✨ Creative</h3>
+            </div>
+            <div class="schedule-grid">
+                <div class="schedule-block" onclick="startSession('Writing', 0.5)">
+                    <h3>Writing</h3>
+                    <p>30 minutes</p>
+                    <p>✍️ Daily</p>
+                </div>
+                <div class="schedule-block" onclick="startSession('Documenting', 0.5)">
+                    <h3>Documenting</h3>
+                    <p>30 minutes</p>
+                    <p>📝 Daily</p>
                 </div>
             </div>
         </div>
@@ -354,7 +375,7 @@
 
         <!-- Log Tab -->
         <div id="log" class="tab-content">
-            <h2 style="color: #eeece7; margin-bottom: 20px;">Session History</h2>
+            <h2 style="color: #1e3c72; margin-bottom: 20px;">Session History</h2>
             <div class="session-log" id="sessionLog"></div>
         </div>
     </div>
@@ -420,11 +441,12 @@
         }
 
         const weeklyGoals = {
-            'Front-End AM': 10,
-            'Front-End PM': 10,
-            'Cybersecurity': 4,
+            'Back-End Engineering': 16,
             'Python': 4,
-            'Client Work': 5
+            'Cybersecurity': 4,
+            'Client Work': 10,
+            'Writing': 3.5,
+            'Documenting': 3.5
         };
 
         function switchTab(tabName) {
@@ -446,6 +468,11 @@
             document.getElementById('timerSubject').textContent = subject;
             document.getElementById('logSubject').value = subject;
             document.getElementById('logHours').value = hours;
+            
+            // Set timer based on session length
+            const minutes = hours * 60;
+            timeRemaining = minutes * 60;
+            
             resetTimer();
             switchTab('timer');
             document.querySelectorAll('.tab')[1].classList.add('active');
@@ -514,7 +541,6 @@
             clearInterval(timerInterval);
             isRunning = false;
             isWorkPhase = true;
-            timeRemaining = WORK_TIME;
             pomodorosCompleted = 0;
             updateTimerDisplay();
             document.querySelector('.timer-buttons button').textContent = 'Start';
