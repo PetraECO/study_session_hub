@@ -1,4 +1,4 @@
-can you fix this code. <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -654,6 +654,20 @@ can you fix this code. <!DOCTYPE html>
         </div>
     </div>
     <script>
+        const storage = {
+            get: async (key) => {
+                const value = localStorage.getItem(key);
+                return value ? { value } : null;
+            },
+            set: async (key, value) => {
+                localStorage.setItem(key, value);
+                return true;
+            },
+            delete: async (key) => {
+                localStorage.removeItem(key);
+            }
+        };
+
         let timerInterval = null;
         let timeRemaining = 40 * 60;
         let selectedDuration = 40;
@@ -677,7 +691,7 @@ can you fix this code. <!DOCTYPE html>
         ];
         async function loadData() {
             try {
-                const result = await [window.storage](http://window.storage).get('courses');
+                const result = await storage.get('courses');
                 if (result) {
                     courses = JSON.parse(result.value);
                 } else {
@@ -705,14 +719,14 @@ can you fix this code. <!DOCTYPE html>
         }
         async function saveData() {
             try {
-                await [window.storage](http://window.storage).set('courses', JSON.stringify(courses));
+                await storage.set('courses', JSON.stringify(courses));
             } catch (e) {
                 console.error('Failed to save courses');
             }
         }
         async function loadTheme() {
             try {
-                const result = await [window.storage](http://window.storage).get('theme');
+                const result = await storage.get('theme');
                 if (result) {
                     const theme = JSON.parse(result.value);
                     applyTheme(theme);
@@ -723,17 +737,17 @@ can you fix this code. <!DOCTYPE html>
         }
         async function saveTheme(theme) {
             try {
-                await [window.storage](http://window.storage).set('theme', JSON.stringify(theme));
+                await storage.set('theme', JSON.stringify(theme));
             } catch (e) {
                 console.error('Failed to save theme');
             }
         }
         function applyTheme(theme) {
-            [document.documentElement.style](http://document.documentElement.style).setProperty('--primary', theme.primary);
-            [document.documentElement.style](http://document.documentElement.style).setProperty('--primary-dark', theme.primaryDark || theme.primary);
-            [document.documentElement.style](http://document.documentElement.style).setProperty('--secondary', theme.secondary);
-            [document.documentElement.style](http://document.documentElement.style).setProperty('--bg-light', theme.bgLight);
-            [document.documentElement.style](http://document.documentElement.style).setProperty('--bg-dark', theme.bgDark);
+            document.documentElement.style.setProperty('--primary', theme.primary);
+            document.documentElement.style.setProperty('--primary-dark', theme.primaryDark || theme.primary);
+            document.documentElement.style.setProperty('--secondary', theme.secondary);
+            document.documentElement.style.setProperty('--bg-light', theme.bgLight);
+            document.documentElement.style.setProperty('--bg-dark', theme.bgDark);
         }
         function renderColorOptions() {
             const container = document.getElementById('colorOptions');
@@ -742,9 +756,9 @@ can you fix this code. <!DOCTYPE html>
             colorThemes.forEach((theme, index) => {
                 const option = document.createElement('div');
                 option.className = 'color-option';
-                [option.style](http://option.style).background = `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`;
-                [option.style](http://option.style).color = 'white';
-                option.textContent = [theme.name](http://theme.name);
+                option.style.background = `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`;
+                option.style.color = 'white';
+                option.textContent = theme.name;
                 option.onclick = () => {
                     document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
                     option.classList.add('active');
@@ -766,13 +780,13 @@ can you fix this code. <!DOCTYPE html>
                 block.innerHTML = `
                     <button class="delete-course" onclick="event.stopPropagation(); deleteCourse(${index})">×</button>
                     <div class="schedule-content">
-                        <h3>${categoryIcons[course.category] || ''} ${[course.name](http://course.name)}</h3>
+                        <h3>${categoryIcons[course.category] || ''} ${course.name}</h3>
                         <p>${course.weekly}h weekly</p>
                         <p>${course.monthly}h monthly</p>
                     </div>
                     <div class="hover-text">Start Session</div>
                 `;
-                block.onclick = () => startSession([course.name](http://course.name), course.weekly / 7);
+                block.onclick = () => startSession(course.name, course.weekly / 7);
                 grid.appendChild(block);
             });
         }
@@ -786,7 +800,7 @@ can you fix this code. <!DOCTYPE html>
                     if (course.days && course.days.includes(day)) {
                         const tag = document.createElement('div');
                         tag.className = 'course-tag';
-                        tag.textContent = [course.name](http://course.name);
+                        tag.textContent = course.name;
                         container.appendChild(tag);
                     }
                 });
@@ -801,8 +815,8 @@ can you fix this code. <!DOCTYPE html>
             select.innerHTML = '<option value="">Select a subject...</option>';
             courses.forEach(course => {
                 const option = document.createElement('option');
-                option.value = [course.name](http://course.name);
-                option.textContent = [course.name](http://course.name);
+                option.value = course.name;
+                option.textContent = course.name;
                 select.appendChild(option);
             });
         }
@@ -915,7 +929,7 @@ can you fix this code. <!DOCTYPE html>
         }
         function setTimerDuration(minutes) {
             document.querySelectorAll('.timer-option').forEach(opt => opt.classList.remove('active'));
-            [event.target](http://event.target).classList.add('active');
+            event.target.classList.add('active');
            
             selectedDuration = minutes;
             if (!isRunning) {
@@ -928,7 +942,7 @@ can you fix this code. <!DOCTYPE html>
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
            
-            [event.target](http://event.target).classList.add('active');
+            event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
            
             if (tabName === 'progress') {
@@ -960,22 +974,22 @@ can you fix this code. <!DOCTYPE html>
         }
         function toggleTimer() {
             isRunning = !isRunning;
-            const btn = [event.target](http://event.target);
+            const btn = event.target;
             btn.textContent = isRunning ? 'Pause' : 'Start';
            
             if (isRunning) {
                 initAudio();
-                timerStartTime = [Date.now](http://Date.now)();
+                timerStartTime = Date.now();
                 pausedTimeRemaining = timeRemaining;
                 timerInterval = setInterval(updateTimer, 1000);
             } else {
                 clearInterval(timerInterval);
-                const elapsed = Math.floor(([Date.now](http://Date.now)() - timerStartTime) / 1000);
+                const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
                 timeRemaining = Math.max(0, pausedTimeRemaining - elapsed);
             }
         }
         function updateTimer() {
-            const elapsed = Math.floor(([Date.now](http://Date.now)() - timerStartTime) / 1000);
+            const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
             timeRemaining = Math.max(0, pausedTimeRemaining - elapsed);
            
             playTick();
@@ -1054,7 +1068,7 @@ can you fix this code. <!DOCTYPE html>
                
                 // Try to get existing sessions
                 try {
-                    const result = await [window.storage](http://window.storage).get('sessions');
+                    const result = await storage.get('sessions');
                     if (result && result.value) {
                         sessions = JSON.parse(result.value);
                     }
@@ -1074,7 +1088,7 @@ can you fix this code. <!DOCTYPE html>
                 });
                
                 // Save sessions
-                const saveResult = await [window.storage](http://window.storage).set('sessions', JSON.stringify(sessions));
+                const saveResult = await storage.set('sessions', JSON.stringify(sessions));
                
                 if (saveResult) {
                     alert('Session saved! 🎉');
@@ -1095,7 +1109,7 @@ can you fix this code. <!DOCTYPE html>
                 let sessions = [];
                
                 try {
-                    const result = await [window.storage](http://window.storage).get('sessions');
+                    const result = await storage.get('sessions');
                     if (result && result.value) {
                         sessions = JSON.parse(result.value);
                     }
@@ -1116,11 +1130,11 @@ can you fix this code. <!DOCTYPE html>
            
             const weeklyHours = {};
             courses.forEach(course => {
-                weeklyHours[[course.name](http://course.name)] = 0;
+                weeklyHours[course.name] = 0;
             });
            
             sessions.forEach(session => {
-                const sessionDate = new Date([session.date](http://session.date));
+                const sessionDate = new Date(session.date);
                 if (sessionDate >= weekAgo && weeklyHours.hasOwnProperty(session.subject)) {
                     weeklyHours[session.subject] += session.hours;
                 }
@@ -1131,14 +1145,14 @@ can you fix this code. <!DOCTYPE html>
            
             courses.forEach(course => {
                 const goal = course.weekly;
-                const completed = weeklyHours[[course.name](http://course.name)] || 0;
+                const completed = weeklyHours[course.name] || 0;
                 const percentage = Math.min((completed / goal) * 100, 100);
                
                 const item = document.createElement('div');
                 item.className = 'progress-item';
                 item.innerHTML = `
                     <div class="progress-header">
-                        <strong>${[course.name](http://course.name)}</strong>
+                        <strong>${course.name}</strong>
                         <span>${completed.toFixed(1)}h / ${goal}h</span>
                     </div>
                     <div class="progress-bar">
@@ -1155,11 +1169,11 @@ can you fix this code. <!DOCTYPE html>
             const monthlyHours = {};
            
             courses.forEach(course => {
-                monthlyHours[[course.name](http://course.name)] = 0;
+                monthlyHours[course.name] = 0;
             });
            
             sessions.forEach(session => {
-                const sessionDate = new Date([session.date](http://session.date));
+                const sessionDate = new Date(session.date);
                 const daysAgo = Math.floor((now - sessionDate) / (1000 * 60 * 60 * 24));
                
                 if (daysAgo < 30 && monthlyHours.hasOwnProperty(session.subject)) {
@@ -1171,25 +1185,25 @@ can you fix this code. <!DOCTYPE html>
             chartContainer.innerHTML = '';
            
             const maxHours = Math.max(
-                ...[courses.map](http://courses.map)(c => c.monthly),
+                ...courses.map(c => c.monthly),
                 ...Object.values(monthlyHours),
                 1
             );
            
             courses.forEach(course => {
                 const goal = course.monthly;
-                const completed = monthlyHours[[course.name](http://course.name)] || 0;
+                const completed = monthlyHours[course.name] || 0;
                 const percentage = (completed / maxHours) * 100;
                
-                let shortName = [course.name](http://course.name);
+                let shortName = course.name;
                 if (shortName.length > 12) {
                     shortName = shortName.substring(0, 10) + '..';
                 }
                
                 const bar = document.createElement('div');
                 bar.className = 'chart-bar';
-                [bar.style](http://bar.style).height = `${Math.max(percentage, 5)}%`;
-                bar.title = `${[course.name](http://course.name)}: ${completed.toFixed(1)}h / ${goal}h`;
+                bar.style.height = `${Math.max(percentage, 5)}%`;
+                bar.title = `${course.name}: ${completed.toFixed(1)}h / ${goal}h`;
                 bar.innerHTML = `
                     <div class="chart-bar-value">${completed.toFixed(1)}h</div>
                     <div class="chart-bar-label">${shortName}</div>
@@ -1199,7 +1213,7 @@ can you fix this code. <!DOCTYPE html>
         }
         async function displaySessionLog() {
             try {
-                const result = await [window.storage](http://window.storage).get('sessions');
+                const result = await storage.get('sessions');
                 const sessions = result ? JSON.parse(result.value) : [];
                 const logContainer = document.getElementById('sessionLog');
                
@@ -1210,7 +1224,7 @@ can you fix this code. <!DOCTYPE html>
                
                 logContainer.innerHTML = '';
                 sessions.slice().reverse().forEach(session => {
-                    const date = new Date([session.date](http://session.date));
+                    const date = new Date(session.date);
                     const entry = document.createElement('div');
                     entry.className = 'log-entry';
                     entry.innerHTML = `
@@ -1233,7 +1247,7 @@ can you fix this code. <!DOCTYPE html>
                 const doubleCheck = confirm('This will permanently delete all your logged sessions and progress. Are you absolutely sure?');
                 if (doubleCheck) {
                     try {
-                        await [window.storage](http://window.storage).delete('sessions');
+                        await storage.delete('sessions');
                         alert('All session data has been reset! 🔄');
                         updateProgress();
                         displaySessionLog();
