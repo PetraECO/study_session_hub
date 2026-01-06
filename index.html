@@ -1156,10 +1156,27 @@
                 return;
             }
             
+            if (isNaN(hours) || hours <= 0) {
+                alert('Please enter a valid number of hours');
+                return;
+            }
+            
             try {
-                const result = await window.storage.get('sessions');
-                const sessions = result ? JSON.parse(result.value) : [];
+                let sessions = [];
                 
+                // Try to get existing sessions
+                try {
+                    const result = await window.storage.get('sessions');
+                    if (result && result.value) {
+                        sessions = JSON.parse(result.value);
+                    }
+                } catch (e) {
+                    // If sessions don't exist yet, start with empty array
+                    console.log('No existing sessions, starting fresh');
+                    sessions = [];
+                }
+                
+                // Add new session
                 sessions.push({
                     subject,
                     hours,
@@ -1168,24 +1185,42 @@
                     pomodoros: pomodorosCompleted
                 });
                 
-                await window.storage.set('sessions', JSON.stringify(sessions));
-                alert('Session saved! 🎉');
-                document.getElementById('logNotes').value = '';
-                resetTimer();
+                // Save sessions
+                const saveResult = await window.storage.set('sessions', JSON.stringify(sessions));
+                
+                if (saveResult) {
+                    alert('Session saved! 🎉');
+                    document.getElementById('logNotes').value = '';
+                    document.getElementById('logHours').value = '';
+                    pomodorosCompleted = 0;
+                    resetTimer();
+                } else {
+                    alert('Failed to save session - storage returned null');
+                }
             } catch (e) {
-                alert('Failed to save session');
+                console.error('Save error:', e);
+                alert('Failed to save session: ' + e.message);
             }
         }
 
         async function updateProgress() {
             try {
-                const result = await window.storage.get('sessions');
-                const sessions = result ? JSON.parse(result.value) : [];
+                let sessions = [];
+                
+                try {
+                    const result = await window.storage.get('sessions');
+                    if (result && result.value) {
+                        sessions = JSON.parse(result.value);
+                    }
+                } catch (e) {
+                    console.log('No sessions found');
+                }
                 
                 updateWeeklyProgress(sessions);
                 updateMonthlyProgress(sessions);
             } catch (e) {
-                console.error('Failed to load sessions');
+                console.error('Failed to load sessions:', e);
+                document.getElementById('weeklyProgressBars').innerHTML = '<p style="color: #999;">Error loading progress data</p>';
             }
         }
 
