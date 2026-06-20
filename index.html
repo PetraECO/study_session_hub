@@ -309,6 +309,66 @@
       background:transparent;color:#fff;transition:all .2s
     }
     .celeb-btn-ghost:hover{background:rgba(255,255,255,.1)}
+  /* ══ DARK THEME (DEFAULT) ══ */
+  body{background:linear-gradient(135deg,#0d0d1f 0%,#13101e 100%)}
+  h1{color:#e8e8f4;letter-spacing:3px}
+  .stat-date{color:#55557a!important}
+  .tab{background:rgba(255,255,255,.05);color:#8888aa;border:1px solid rgba(255,255,255,.05)}
+  .tab:hover{background:rgba(255,255,255,.09);color:#e8e8f4}
+  .tab.active{background:var(--primary);color:#fff}
+  #progress.tab-content,#history.tab-content,#settings.tab-content{background:#16162a;box-shadow:0 8px 40px rgba(0,0,0,.55)}
+  .tab-content h2{color:#e8e8f4}
+  .area-card{background:#16162a;border-color:rgba(255,255,255,.06)}
+  .area-card::before{background:linear-gradient(135deg,rgba(255,255,255,.03) 0%,transparent)}
+  .area-name{color:#8888aa}
+  .area-hours{color:#e8e8f4}
+  .area-goal-text{color:#4a4a6a}
+  .area-pct{color:#4a4a6a}
+  .area-bar-wrap{background:rgba(255,255,255,.07)}
+  .progress-column{background:#0f0f1c;border-color:rgba(255,255,255,.06)}
+  .progress-column h3{color:#e8e8f4}
+  .progress-item{background:#16162a}
+  .progress-header{color:#e8e8f4}
+  .progress-bar{background:rgba(255,255,255,.07)}
+  .chart-container{background:#0f0f1c;border-color:rgba(255,255,255,.06)}
+  .chart-bar-label{color:#8888aa}
+  .chart-bar-value{color:#e8e8f4}
+  .log-entry{background:#0f0f1c}
+  .log-header{color:#e8e8f4}
+  .log-task{color:#b8b8d0}
+  .log-notes{color:#8888aa}
+  .log-empty{color:#4a4a6a}
+  .settings-section{background:#0f0f1c;border-color:rgba(255,255,255,.06)}
+  .settings-section h3{color:#e8e8f4}
+  .settings-section p{color:#8888aa}
+  .goal-card{background:#16162a;border-color:rgba(255,255,255,.06)}
+  .goal-row label{color:#8888aa}
+  .goal-row input{background:#0a0a18;border-color:rgba(255,255,255,.1);color:#e8e8f4}
+  .goal-row input:focus{border-color:var(--primary)}
+  label{color:#9494b0}
+  input,textarea,select{background:#0a0a18;border-color:rgba(255,255,255,.1);color:#e8e8f4}
+  input:focus,textarea:focus,select:focus{border-color:var(--primary);background:#0d0d1c}
+  input::placeholder,textarea::placeholder{color:#4a4a6a}
+  .session-form{background:#0f0f1c;border-color:rgba(255,255,255,.06)}
+  .session-form h3{color:#e8e8f4}
+  .modal-sheet{background:#16162a}
+  .modal-handle{background:rgba(255,255,255,.12)}
+  .modal-area-name{color:#e8e8f4}
+  .form-group label{color:#9494b0}
+  .duration-opt{background:#0a0a18;border-color:rgba(255,255,255,.1);color:#8888aa}
+  .duration-opt.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .no-session-msg{color:#4a4a6a}
+  .no-session-msg div{color:#4a4a6a}
+  /* Custom duration inputs — use high specificity to beat generic input rule */
+  input.custom-dur{
+    width:58px;padding:7px 4px;background:rgba(255,255,255,.12)!important;
+    border:2px solid rgba(255,255,255,.35)!important;border-radius:8px;
+    color:#fff!important;font-family:inherit;font-size:.85em;text-align:center;
+    -moz-appearance:textfield;flex-shrink:0
+  }
+  input.custom-dur::-webkit-inner-spin-button,input.custom-dur::-webkit-outer-spin-button{-webkit-appearance:none}
+  input.custom-dur::placeholder{color:rgba(255,255,255,.38)!important}
+  input.custom-dur:focus{outline:none;border-color:rgba(255,255,255,.75)!important;background:rgba(255,255,255,.18)!important}
   </style>
 </head>
 <body>
@@ -365,9 +425,10 @@
     <div class="form-group">
       <label>Duration</label>
       <div class="duration-row">
-        <button class="duration-opt" onclick="setModalDuration(25,this)">25 min</button>
-        <button class="duration-opt active" onclick="setModalDuration(40,this)">40 min</button>
+        <button class="duration-opt" onclick="setModalDuration(15,this)">15 min</button>
+        <button class="duration-opt active" onclick="setModalDuration(35,this)">35 min</button>
         <button class="duration-opt" onclick="setModalDuration(60,this)">60 min</button>
+        <input type="number" id="modalCustom" class="custom-dur" placeholder="min" min="1" max="240" title="Custom minutes" oninput="setCustomModalDuration(this)">
       </div>
     </div>
     <button class="btn-start" id="modalStartBtn" onclick="beginSession()">▶ Start Focus Session</button>
@@ -420,9 +481,10 @@
           </div>
         </div>
         <div class="timer-options">
-          <div class="timer-option" onclick="setTimerDuration(25,this)">25 min</div>
-          <div class="timer-option active" onclick="setTimerDuration(40,this)">40 min</div>
-          <div class="timer-option" onclick="setTimerDuration(60,this)">60 min</div>
+          <div class="timer-option" onclick="setTimerDuration(15,this)">15</div>
+          <div class="timer-option active" onclick="setTimerDuration(35,this)">35</div>
+          <div class="timer-option" onclick="setTimerDuration(60,this)">60</div>
+          <input type="number" id="timerCustom" class="custom-dur" placeholder="min" min="1" max="240" title="Custom minutes" oninput="setCustomTimerDuration(this)">
         </div>
         <div class="timer-buttons">
           <button class="btn-white" onclick="toggleTimer()" id="startBtn">Start</button>
@@ -500,12 +562,12 @@ const KUDOS = [
 ];
 
 const COLOR_THEMES = [
-  {name:'Purple',primary:'#667eea',secondary:'#764ba2',bgLight:'#f5f7fa',bgDark:'#c3cfe2'},
-  {name:'Ocean', primary:'#2193b0',secondary:'#6dd5ed',bgLight:'#e0f7fa',bgDark:'#80deea'},
-  {name:'Sunset',primary:'#f12711',secondary:'#f5af19',bgLight:'#fff3e0',bgDark:'#ffccbc'},
-  {name:'Forest',primary:'#11998e',secondary:'#38ef7d',bgLight:'#e8f5e9',bgDark:'#a5d6a7'},
-  {name:'Rose',  primary:'#c94b4b',secondary:'#4b134f',bgLight:'#fce4ec',bgDark:'#f8bbd0'},
-  {name:'Navy',  primary:'#283c86',secondary:'#45a247',bgLight:'#e3f2fd',bgDark:'#90caf9'}
+  {name:'Charcoal',primary:'#667eea',secondary:'#764ba2',bgLight:'#0d0d1f',bgDark:'#13101e'},
+  {name:'Midnight',primary:'#2193b0',secondary:'#6dd5ed',bgLight:'#0a0f1a',bgDark:'#0d1422'},
+  {name:'Ember',   primary:'#f12711',secondary:'#f5af19',bgLight:'#1a0a08',bgDark:'#1f0e05'},
+  {name:'Forest',  primary:'#11998e',secondary:'#38ef7d',bgLight:'#0a1810',bgDark:'#0d1f12'},
+  {name:'Rose',    primary:'#e0527a',secondary:'#ff8fab',bgLight:'#1a0a12',bgDark:'#1f0d16'},
+  {name:'Violet',  primary:'#a855f7',secondary:'#ec4899',bgLight:'#0f0a1f',bgDark:'#130d22'}
 ];
 
 const CIRCUMFERENCE = 753.98;
@@ -523,11 +585,11 @@ let sessions   = [];
 let areaGoals  = {...DEFAULT_GOALS};
 let activeArea = '';
 let activeTask = '';
-let modalDuration = 40;
+let modalDuration = 35;
 
 let timerInterval     = null;
-let timeRemaining     = 40 * 60;
-let selectedDuration  = 40;
+let timeRemaining     = 35 * 60;
+let selectedDuration  = 35;
 let isWorkPhase       = true;
 let isRunning         = false;
 let pomodorosCompleted = 0;
@@ -619,9 +681,11 @@ function renderDailyStats() {
   const totalHours = tod.reduce((s,x) => s + x.hours, 0);
   const h = Math.floor(totalHours);
   const m = Math.round((totalHours - h) * 60);
-  document.getElementById('statFocus').textContent = h > 0 ? `${h}h${m>0?` ${m}m`:''}` : (m > 0 ? `${m}m` : '0m');
-  document.getElementById('statSessions').textContent = tod.length;
-  document.getElementById('statStreak').textContent = `${calculateStreak()} 🔥`;
+  const streak = calculateStreak();
+  document.getElementById('statFocus').textContent =
+    totalHours > 0 ? (h > 0 ? `${h}h${m>0?` ${m}m`:''}` : `${m}m`) : '—';
+  document.getElementById('statSessions').textContent = tod.length || '—';
+  document.getElementById('statStreak').textContent = streak > 0 ? `${streak} 🔥` : '—';
 }
 
 function renderAreaCards() {
@@ -692,6 +756,25 @@ function setModalDuration(mins, el) {
   modalDuration = mins;
   document.querySelectorAll('.duration-opt').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
+  const ci = document.getElementById('modalCustom');
+  if (ci) ci.value = '';
+}
+
+function setCustomModalDuration(input) {
+  const mins = parseInt(input.value);
+  if (mins >= 1 && mins <= 240) {
+    modalDuration = mins;
+    document.querySelectorAll('.duration-opt').forEach(b => b.classList.remove('active'));
+  }
+}
+
+function setCustomTimerDuration(input) {
+  const mins = parseInt(input.value);
+  if (mins >= 1 && mins <= 240) {
+    document.querySelectorAll('.timer-option').forEach(o => o.classList.remove('active'));
+    selectedDuration = mins;
+    if (!isRunning) { timeRemaining = mins * 60; isWorkPhase = true; updateTimerDisplay(); updateTimerRing(); }
+  }
 }
 
 function beginSession() {
@@ -741,6 +824,8 @@ function setTimerDuration(mins, el) {
   document.querySelectorAll('.timer-option').forEach(o => o.classList.remove('active'));
   if (el) el.classList.add('active');
   selectedDuration = mins;
+  const ci = document.getElementById('timerCustom');
+  if (ci) ci.value = '';
   if (!isRunning) { timeRemaining = mins*60; isWorkPhase = true; updateTimerDisplay(); updateTimerRing(); }
 }
 
