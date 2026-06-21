@@ -63,54 +63,63 @@
     }
 
     /* Area cards */
-    .area-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-    @media(max-width:650px){.area-cards{grid-template-columns:1fr}}
-    .area-card{
-      background:rgba(255,255,255,.045);
-      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-      border:1px solid rgba(255,255,255,.09);border-radius:20px;
-      padding:26px 22px 22px;cursor:pointer;transition:all .3s ease;
-      position:relative;overflow:hidden
+    /* ══ HERO AREA CAROUSEL ══ */
+    .area-carousel{position:relative;margin-bottom:24px}
+    .area-hero{
+      border-radius:22px;padding:36px 32px 32px;
+      position:relative;overflow:hidden;cursor:pointer;
+      transition:transform .2s ease;
+      min-height:220px;display:flex;flex-direction:column;justify-content:space-between
     }
-    /* top accent line */
-    .area-card::before{
-      content:'';position:absolute;top:0;left:0;right:0;height:1px;
-      background:var(--accent-color);opacity:.85;pointer-events:none
+    .area-hero:active{transform:scale(.99)}
+    /* coloured gradient bg from area colour */
+    .area-hero::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+      opacity:1;z-index:0
     }
-    /* radial glow behind icon */
-    .area-card::after{
-      content:'';position:absolute;top:-50px;left:50%;transform:translateX(-50%);
-      width:200px;height:120px;
-      background:radial-gradient(ellipse,var(--accent-color) 0%,transparent 70%);
-      opacity:.1;pointer-events:none;transition:opacity .3s
+    /* glass sheen */
+    .area-hero::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 55%);
+      pointer-events:none;z-index:1
     }
-    .area-card:hover{
-      transform:translateY(-4px);
-      background:rgba(255,255,255,.07);
-      box-shadow:0 20px 48px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.1)
+    .area-hero-inner{position:relative;z-index:2}
+    .area-hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+    .area-hero-icon{
+      width:52px;height:52px;border-radius:14px;
+      background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);
+      display:flex;align-items:center;justify-content:center
     }
-    .area-card:hover::after{opacity:.18}
-    .area-card:active{transform:translateY(-1px)}
-    .area-icon-wrap{
-      width:46px;height:46px;border-radius:13px;
-      display:flex;align-items:center;justify-content:center;
-      margin-bottom:18px;flex-shrink:0
+    .area-hero-name{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.75);margin-bottom:4px}
+    .area-hero-hours{font-size:3em;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px}
+    .area-hero-goal{font-size:.85em;color:rgba(255,255,255,.65);margin-top:4px;font-weight:500}
+    .area-hero-bar-wrap{height:4px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;margin:16px 0 6px}
+    .area-hero-bar-fill{height:100%;border-radius:4px;background:rgba(255,255,255,.9);transition:width .6s ease}
+    .area-hero-pct{font-size:.75em;font-weight:600;color:rgba(255,255,255,.65)}
+    .area-hero-start{
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      margin-top:22px;padding:15px;border-radius:13px;
+      font-size:.95em;font-weight:800;color:#fff;
+      background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);
+      transition:all .2s
     }
-    .area-name{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.4);margin-bottom:6px}
-    .area-hours{font-size:2.4em;font-weight:800;color:#fff;line-height:1;margin-bottom:2px}
-    .area-goal-text{font-size:.8em;color:rgba(255,255,255,.32);margin-bottom:16px;font-weight:500}
-    .area-bar-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin-bottom:10px}
-    .area-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
-    .area-pct{font-size:.75em;font-weight:600;color:rgba(255,255,255,.32)}
-    .area-card .start-hint{
-      display:flex;align-items:center;justify-content:center;gap:7px;
-      margin-top:18px;padding:11px;border-radius:11px;
-      font-size:.87em;font-weight:700;color:#fff;
-      border:1px solid rgba(255,255,255,.15);
-      background:rgba(255,255,255,.06);
-      opacity:1;transition:all .2s ease
+    .area-hero:hover .area-hero-start{background:rgba(255,255,255,.3);border-color:rgba(255,255,255,.5)}
+    /* nav */
+    .area-carousel-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px}
+    .carousel-btn{
+      width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);
+      font-size:1.1em;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .2s;font-family:inherit
     }
-    .area-card:hover .start-hint{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25)}
+    .carousel-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+    .carousel-dots{display:flex;gap:6px;align-items:center}
+    .carousel-dot{
+      width:6px;height:6px;border-radius:50%;
+      background:rgba(255,255,255,.25);transition:all .25s
+    }
+    .carousel-dot.active{background:#fff;width:20px;border-radius:3px}
 
     /* ══ SESSION START MODAL ══ */
     .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;justify-content:center;align-items:flex-end}
@@ -570,13 +579,10 @@
   body.light-mode .recent-area{color:#18181b}
   body.light-mode .recent-task{color:#71717a}
   body.light-mode .recent-header{color:#a1a1aa}
-  body.light-mode .area-card{background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.07)}
-  body.light-mode .area-card:hover{background:rgba(255,255,255,.9)}
-  body.light-mode .area-name{color:rgba(0,0,0,.4)}
-  body.light-mode .area-hours{color:#18181b}
-  body.light-mode .area-goal-text,body.light-mode .area-pct{color:rgba(0,0,0,.35)}
-  body.light-mode .area-bar-wrap{background:rgba(0,0,0,.08)}
-  body.light-mode .area-card .start-hint{border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.04);color:#18181b}
+  body.light-mode .carousel-btn{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.1);color:rgba(0,0,0,.5)}
+  body.light-mode .carousel-btn:hover{background:rgba(0,0,0,.1);color:#18181b}
+  body.light-mode .carousel-dot{background:rgba(0,0,0,.2)}
+  body.light-mode .carousel-dot.active{background:#18181b}
   body.light-mode .area-name{color:#71717a}
   body.light-mode .area-hours{color:#18181b}
   body.light-mode .area-goal-text{color:#a1a1aa}
@@ -880,7 +886,14 @@
       <div class="stat-pill"><div class="stat-pill-val" id="statSessions">—</div><div class="stat-pill-lbl">Sessions</div></div>
       <div class="stat-pill"><div class="stat-pill-val" id="statStreak">—</div><div class="stat-pill-lbl">Streak</div></div>
     </div>
-    <div class="area-cards" id="areaCards"></div>
+    <div class="area-carousel" id="areaCards">
+      <div id="areaHeroCard"></div>
+      <div class="area-carousel-nav">
+        <button class="carousel-btn" onclick="carouselPrev()">‹</button>
+        <div class="carousel-dots" id="carouselDots"></div>
+        <button class="carousel-btn" onclick="carouselNext()">›</button>
+      </div>
+    </div>
   </div>
 
   <!-- ══ TIMER ══ -->
@@ -1267,35 +1280,75 @@ function renderDailyStats() {
   document.getElementById('statStreak').textContent = streak > 0 ? `${streak} 🔥` : '—';
 }
 
+let carouselIndex = 0;
+
 function renderAreaCards() {
-  const grid = document.getElementById('areaCards');
-  grid.innerHTML = '';
+  carouselIndex = Math.min(carouselIndex, AREAS.length - 1);
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+function renderCarouselCard() {
+  const hero = document.getElementById('areaHeroCard');
+  if (!hero) return;
   const weekSessions = getWeekSessions();
+  const area = AREAS[carouselIndex];
+  const done = weekSessions.filter(s => s.area === area.name).reduce((s,x) => s+x.hours, 0);
+  const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name]).weekly;
+  const pct  = Math.min((done / goal) * 100, 100);
+  const hoursDisplay = done > 0 ? `${done.toFixed(1)}h` : '—';
+  const pctDisplay   = done > 0 ? `${pct.toFixed(0)}% of goal` : 'Ready when you are';
+  // darken the accent colour for gradient end
+  const dark = area.color.replace(/^#/, '');
+  const r = Math.max(0, parseInt(dark.slice(0,2),16) - 40).toString(16).padStart(2,'0');
+  const g = Math.max(0, parseInt(dark.slice(2,4),16) - 40).toString(16).padStart(2,'0');
+  const b = Math.max(0, parseInt(dark.slice(4,6),16) - 40).toString(16).padStart(2,'0');
+  const accentDark = `#${r}${g}${b}`;
 
-  AREAS.forEach(area => {
-    const done  = weekSessions.filter(s => s.area === area.name).reduce((s,x) => s+x.hours, 0);
-    const goal  = (areaGoals[area.name] || DEFAULT_GOALS[area.name]).weekly;
-    const pct   = Math.min((done/goal)*100, 100);
-
-    const card = document.createElement('div');
-    card.className = 'area-card';
-    card.style.setProperty('--accent-color', area.color);
-    card.style.borderTopColor = area.color;
-    const hoursDisplay = done > 0 ? `${done.toFixed(1)}h` : '—';
-    const pctDisplay   = done > 0 ? `${pct.toFixed(0)}% of goal` : 'Ready when you are';
-    card.innerHTML = `
-      <div class="area-icon-wrap" style="background:${area.color}22;border:1px solid ${area.color}44">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${area.color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${getAreaIconPath(area.name)}</svg>
+  hero.innerHTML = `
+    <div class="area-hero" style="--accent-color:${area.color};--accent-dark:${accentDark}" onclick="openSessionModal(AREAS[${carouselIndex}])">
+      <div class="area-hero-inner">
+        <div class="area-hero-top">
+          <div>
+            <div class="area-hero-name">${area.name}</div>
+            <div class="area-hero-hours">${hoursDisplay}</div>
+            <div class="area-hero-goal">of ${goal}h this week</div>
+          </div>
+          <div class="area-hero-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${getAreaIconPath(area.name)}</svg>
+          </div>
+        </div>
+        <div class="area-hero-bar-wrap"><div class="area-hero-bar-fill" style="width:${pct}%"></div></div>
+        <div class="area-hero-pct">${pctDisplay}</div>
+        <div class="area-hero-start">▶ Start Session</div>
       </div>
-      <div class="area-name">${area.name}</div>
-      <div class="area-hours">${hoursDisplay}</div>
-      <div class="area-goal-text">of ${goal}h this week</div>
-      <div class="area-bar-wrap"><div class="area-bar-fill" style="width:${pct}%;background:${area.color}"></div></div>
-      <div class="area-pct">${pctDisplay}</div>
-      <div class="start-hint">▶ Start Session</div>`;
-    card.onclick = () => openSessionModal(area);
-    grid.appendChild(card);
-  });
+    </div>`;
+}
+
+function renderCarouselDots() {
+  const dots = document.getElementById('carouselDots');
+  if (!dots) return;
+  dots.innerHTML = AREAS.map((_, i) =>
+    `<div class="carousel-dot${i === carouselIndex ? ' active' : ''}" onclick="carouselGoTo(${i})"></div>`
+  ).join('');
+}
+
+function carouselNext() {
+  carouselIndex = (carouselIndex + 1) % AREAS.length;
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+function carouselPrev() {
+  carouselIndex = (carouselIndex - 1 + AREAS.length) % AREAS.length;
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+function carouselGoTo(i) {
+  carouselIndex = i;
+  renderCarouselCard();
+  renderCarouselDots();
 }
 
 // ══ AUTH ══
@@ -1434,9 +1487,9 @@ function renderHomeCard() {
   if (sessions.length > 0 && todaySess.length === 0) {
     const last = new Date(sessions[0].date);
     const daysSince = Math.floor((Date.now() - last) / 86400000);
-    if (daysSince === 1) lastSessionNudge = 'You worked yesterday — nice. Today can be just 5 minutes.';
-    else if (daysSince === 2) lastSessionNudge = 'It\'s been a couple of days. No pressure — whenever you\'re ready.';
-    else if (daysSince >= 3) lastSessionNudge = 'Been a while. Starting is the hardest part — just 5 minutes counts.';
+    if (daysSince === 1) lastSessionNudge = 'You worked yesterday. Today can be just 5 minutes.';
+    else if (daysSince === 2) lastSessionNudge = 'It\'s been a couple of days. Whenever you\'re ready.';
+    else if (daysSince >= 3) lastSessionNudge = 'Been a while. Starting is the hardest part.';
   }
 
   // ── Sub-line ──
@@ -1450,7 +1503,7 @@ function renderHomeCard() {
   } else if (week.length > 0) {
     subLine = lastSessionNudge || `${weekHours.toFixed(1)}h this week. Today's session is waiting.`;
   } else {
-    subLine = 'No pressure. Pick a focus area below whenever you\'re ready.';
+    subLine = 'Pick a focus area below and start when you\'re ready.';
   }
 
   // ── Area nudge ──
@@ -1529,6 +1582,9 @@ function quickStart() {
     return { area, pct: done / goal };
   }).sort((a,b) => a.pct - b.pct)[0];
   const area = mostBehind ? mostBehind.area : AREAS[0];
+  // Navigate carousel to that area
+  const idx = AREAS.findIndex(a => a.name === area.name);
+  if (idx >= 0) { carouselIndex = idx; renderCarouselCard(); renderCarouselDots(); }
 
   // Open modal with 5-min preset and placeholder task
   openSessionModal(area);
