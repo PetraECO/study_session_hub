@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vincit</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     :root{
@@ -425,6 +426,20 @@
     cursor:pointer;transition:color .2s;background:none;border:none;font-family:inherit
   }
   .onboard-skip:hover{color:rgba(255,255,255,.6)}
+  .auth-tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,.06);border-radius:10px;padding:4px}
+  .auth-tab{
+    flex:1;padding:9px;border:none;border-radius:7px;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:.88em;
+    background:transparent;color:rgba(255,255,255,.45);transition:all .2s
+  }
+  .auth-tab.active{background:rgba(255,255,255,.14);color:#fff}
+  .auth-error{
+    background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);
+    color:#fca5a5;border-radius:8px;padding:10px 12px;
+    font-size:.83em;font-weight:500;margin-bottom:12px;text-align:left
+  }
+  .auth-loading{color:rgba(255,255,255,.5);font-size:.9em;text-align:center;padding:12px 0}
+  .hidden{display:none!important}
 
   /* ══ DARK BASE: inputs / labels ══ */
   label{color:rgba(255,255,255,.55)}
@@ -521,8 +536,8 @@
 </head>
 <body>
 
-<!-- ══ ONBOARDING ══ -->
-<div class="onboarding-overlay hidden" id="onboardingOverlay">
+<!-- ══ AUTH ══ -->
+<div class="onboarding-overlay hidden" id="authOverlay">
   <div class="onboarding-box">
     <div class="onboarding-logo">
       <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -534,18 +549,46 @@
       </svg>
       <h2>Vincit</h2>
     </div>
-    <div class="onboarding-title">Let's get you set up</div>
-    <div class="onboarding-sub">Just your name and email — stored on this device only, never sent anywhere.</div>
-    <div class="onboarding-field">
-      <label>Your name</label>
-      <input type="text" id="onboardName" placeholder="e.g. Petra" maxlength="50" autocomplete="name">
+
+    <!-- Auth tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabSignIn" onclick="showAuthTab('signin')">Sign in</button>
+      <button class="auth-tab" id="tabSignUp" onclick="showAuthTab('signup')">Create account</button>
     </div>
-    <div class="onboarding-field">
-      <label>Email address</label>
-      <input type="email" id="onboardEmail" placeholder="e.g. you@example.com" autocomplete="email">
+
+    <!-- Sign in -->
+    <div id="authSignIn">
+      <div class="onboarding-field">
+        <label>Email</label>
+        <input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="onboarding-field">
+        <label>Password</label>
+        <input type="password" id="siPassword" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="auth-error hidden" id="siError"></div>
+      <button class="btn-onboard" onclick="signIn()">Sign in →</button>
     </div>
-    <button class="btn-onboard" onclick="saveProfile()">Start using Vincit →</button>
-    <button class="onboard-skip" onclick="skipOnboarding()">Skip for now</button>
+
+    <!-- Sign up -->
+    <div id="authSignUp" style="display:none">
+      <div class="onboarding-field">
+        <label>Your name</label>
+        <input type="text" id="suName" placeholder="e.g. Petra" maxlength="50" autocomplete="name">
+      </div>
+      <div class="onboarding-field">
+        <label>Email</label>
+        <input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="onboarding-field">
+        <label>Password</label>
+        <input type="password" id="suPassword" placeholder="At least 6 characters" autocomplete="new-password">
+      </div>
+      <div class="auth-error hidden" id="suError"></div>
+      <button class="btn-onboard" onclick="signUp()">Create account →</button>
+    </div>
+
+    <div class="auth-loading hidden" id="authLoading">Signing in…</div>
   </div>
 </div>
 
@@ -622,7 +665,8 @@
 </div>
 
 <div class="container">
-  <div class="brand">
+  <div class="brand" style="position:relative">
+    <button id="signOutBtn" onclick="signOut()" style="display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);padding:6px 14px;border-radius:8px;font-family:inherit;font-size:.78em;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.55)'">Sign out</button>
     <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="vg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
@@ -784,6 +828,11 @@
 </div>
 
 <script>
+// ══ SUPABASE ══
+const SUPABASE_URL  = 'https://nqgawtyzynggdouanzrr.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_au3b9IbvnK7ECv2PJxGxMw_xGNJaTs8';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ══ CONFIG ══
 const DEFAULT_AREAS = [
   {name:'Work',     icon:'💼', color:'#6b9cc4'},
@@ -812,7 +861,7 @@ const COLOR_THEMES = [
 const CIRCUMFERENCE = 753.98;
 const BREAK_TIME = 10 * 60;
 
-// ══ STORAGE ══
+// ══ STORAGE (device prefs only — theme, appearance) ══
 const store = {
   get:(k)=>{ const v=localStorage.getItem(k); return v?JSON.parse(v):null },
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
@@ -825,6 +874,7 @@ let areaGoals  = {...DEFAULT_GOALS};
 let activeArea = '';
 let activeTask = '';
 let modalDuration = 35;
+let currentUser = null;
 
 let timerInterval     = null;
 let timeRemaining     = 35 * 60;
@@ -841,34 +891,88 @@ let audioContext      = null;
 let confettiFrame     = null;
 
 // ══ INIT ══
-function init() {
-  // Load sessions (migrate old format)
-  const raw = store.get('sessions') || [];
-  sessions = raw.map(migrateSession);
-
-  // Load goals
-  areaGoals = store.get('areaGoals') || {...DEFAULT_GOALS};
-
-  // Load custom areas
-  const customAreas = store.get('customAreas');
-  if (customAreas && customAreas.length === 3) AREAS = customAreas;
-
-  // Load appearance (dark/light)
+async function init() {
+  // Device prefs (always local)
   const savedAppearance = store.get('appearance') || 'dark';
   setAppearance(savedAppearance);
-
-  // Show onboarding if no profile yet
-  if (!store.get('profile')) {
-    document.getElementById('onboardingOverlay').classList.remove('hidden');
-  }
-
-  // Load theme
   const theme = store.get('theme') || COLOR_THEMES[0];
   applyTheme(theme);
 
+  // Check Supabase session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadUserData();
+    showApp();
+  } else {
+    showAuthOverlay();
+  }
+
+  // Listen for auth changes
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      await loadUserData();
+      showApp();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      sessions = [];
+      AREAS = [...DEFAULT_AREAS];
+      areaGoals = {...DEFAULT_GOALS};
+      showAuthOverlay();
+    }
+  });
+}
+
+async function loadUserData() {
+  // Load settings (areas, goals, profile name)
+  const { data: settings } = await sb
+    .from('user_settings')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (settings) {
+    if (settings.areas && settings.areas.length === 3) AREAS = settings.areas;
+    if (settings.goals) areaGoals = settings.goals;
+    // Store name for greeting
+    if (settings.name) store.set('profile', {name: settings.name, email: currentUser.email});
+  } else {
+    AREAS = [...DEFAULT_AREAS];
+    areaGoals = {...DEFAULT_GOALS};
+  }
+
+  // Load sessions
+  const { data: rows } = await sb
+    .from('sessions')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('date', {ascending: false});
+
+  sessions = (rows || []).map(r => ({
+    id: r.id,
+    area: r.area,
+    task: r.task || '',
+    hours: parseFloat(r.hours) || 0,
+    notes: r.notes || '',
+    date: r.date,
+    pomodoros: r.pomodoros || 0
+  }));
+}
+
+function showApp() {
+  document.getElementById('authOverlay').classList.add('hidden');
+  const btn = document.getElementById('signOutBtn');
+  if (btn) btn.style.display = 'block';
   renderHome();
   updateTimerDisplay();
   updateTimerRing();
+}
+
+function showAuthOverlay() {
+  document.getElementById('authOverlay').classList.remove('hidden');
+  const btn = document.getElementById('signOutBtn');
+  if (btn) btn.style.display = 'none';
 }
 
 function migrateSession(s) {
@@ -974,29 +1078,68 @@ function renderAreaCards() {
   });
 }
 
+// ══ AUTH ══
+function showAuthTab(tab) {
+  document.getElementById('authSignIn').style.display = tab === 'signin' ? '' : 'none';
+  document.getElementById('authSignUp').style.display = tab === 'signup' ? '' : 'none';
+  document.getElementById('tabSignIn').classList.toggle('active', tab === 'signin');
+  document.getElementById('tabSignUp').classList.toggle('active', tab === 'signup');
+  document.getElementById('siError').classList.add('hidden');
+  document.getElementById('suError').classList.add('hidden');
+}
+
+function setAuthLoading(on) {
+  document.getElementById('authLoading').classList.toggle('hidden', !on);
+  document.getElementById('authSignIn').style.opacity = on ? '.4' : '1';
+  document.getElementById('authSignUp').style.opacity = on ? '.4' : '1';
+}
+
+async function signIn() {
+  const email    = document.getElementById('siEmail').value.trim();
+  const password = document.getElementById('siPassword').value;
+  const errEl    = document.getElementById('siError');
+  errEl.classList.add('hidden');
+  if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.classList.remove('hidden'); return; }
+  setAuthLoading(true);
+  const { error } = await sb.auth.signInWithPassword({email, password});
+  setAuthLoading(false);
+  if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); }
+}
+
+async function signUp() {
+  const name     = document.getElementById('suName').value.trim();
+  const email    = document.getElementById('suEmail').value.trim();
+  const password = document.getElementById('suPassword').value;
+  const errEl    = document.getElementById('suError');
+  errEl.classList.add('hidden');
+  if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.remove('hidden'); return; }
+  setAuthLoading(true);
+  const { data, error } = await sb.auth.signUp({email, password});
+  if (error) { setAuthLoading(false); errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+  // Save name to user_settings immediately
+  if (data.user) {
+    store.set('profile', {name, email});
+    await sb.from('user_settings').upsert({user_id: data.user.id, name, areas: DEFAULT_AREAS, goals: DEFAULT_GOALS, appearance:'dark'});
+  }
+  setAuthLoading(false);
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+}
+
 // ══ PROFILE ══
 function getProfile() {
-  return store.get('profile') || {name:'', email:''};
+  return store.get('profile') || {name: currentUser?.email?.split('@')[0] || '', email: currentUser?.email || ''};
 }
 
-function saveProfile() {
-  const name  = document.getElementById('onboardName').value.trim();
-  const email = document.getElementById('onboardEmail').value.trim();
-  if (!name) { document.getElementById('onboardName').focus(); return; }
-  store.set('profile', {name, email});
-  document.getElementById('onboardingOverlay').classList.add('hidden');
-  renderHome();
-}
-
-function skipOnboarding() {
-  store.set('profile', {name:'', email:''});
-  document.getElementById('onboardingOverlay').classList.add('hidden');
-}
-
-function saveProfileFromSettings() {
+async function saveProfileFromSettings() {
   const name  = document.getElementById('profileName').value.trim();
-  const email = document.getElementById('profileEmail').value.trim();
-  store.set('profile', {name, email});
+  store.set('profile', {name, email: currentUser?.email || ''});
+  if (currentUser) {
+    await sb.from('user_settings').upsert({user_id: currentUser.id, name, updated_at: new Date().toISOString()});
+  }
   showSettingsToast();
 }
 
@@ -1299,19 +1442,24 @@ function closeCelebration() {
   if (confettiFrame) { cancelAnimationFrame(confettiFrame); confettiFrame = null; }
 }
 
-function saveAndClose() {
+async function saveAndClose() {
   const notes = document.getElementById('celebNotes').value.trim();
   const workMins = Math.round(sessionElapsed / 60) || selectedDuration;
-  if (activeArea) {
-    sessions.push({
+  if (activeArea && currentUser) {
+    const newSession = {
       area: activeArea,
       task: activeTask,
       hours: +(workMins / 60).toFixed(2),
       notes,
       date: new Date().toISOString(),
       pomodoros: pomodorosCompleted
-    });
-    store.set('sessions', sessions);
+    };
+    const { data, error } = await sb.from('sessions').insert({
+      user_id: currentUser.id,
+      ...newSession
+    }).select().single();
+    if (!error && data) newSession.id = data.id;
+    sessions.unshift(newSession);
   }
   document.getElementById('celebNotes').value = '';
   closeCelebration();
@@ -1471,13 +1619,15 @@ function renderGoalGrid() {
   });
 }
 
-function saveGoals() {
+async function saveGoals() {
   AREAS.forEach(area => {
     const w = parseFloat(document.getElementById(`goal-w-${area.name}`).value);
     const m = parseFloat(document.getElementById(`goal-m-${area.name}`).value);
     if (w > 0 && m > 0) areaGoals[area.name] = {weekly:w, monthly:m};
   });
-  store.set('areaGoals', areaGoals);
+  if (currentUser) {
+    await sb.from('user_settings').upsert({user_id: currentUser.id, goals: areaGoals, updated_at: new Date().toISOString()});
+  }
   showSettingsToast();
 }
 
@@ -1504,23 +1654,23 @@ function renderAreaEditGrid() {
   });
 }
 
-function saveAreas() {
+async function saveAreas() {
   const oldNames = AREAS.map(a => a.name);
   const newAreas = AREAS.map((area, i) => ({
     name:  (document.getElementById(`aed-name-${i}`).value.trim()  || area.name),
     icon:  (document.getElementById(`aed-icon-${i}`).value.trim()  || area.icon),
     color: document.getElementById(`aed-color-${i}`).value
   }));
-  // Migrate goals from old names to new names so weekly goals carry over
   const newGoals = {};
   newAreas.forEach((area, i) => {
     const old = oldNames[i];
     newGoals[area.name] = areaGoals[old] || DEFAULT_GOALS[old] || {weekly:10, monthly:40};
   });
   areaGoals = newGoals;
-  store.set('areaGoals', areaGoals);
   AREAS = newAreas;
-  store.set('customAreas', AREAS);
+  if (currentUser) {
+    await sb.from('user_settings').upsert({user_id: currentUser.id, areas: AREAS, goals: areaGoals, updated_at: new Date().toISOString()});
+  }
   showSettingsToast();
 }
 
@@ -1532,10 +1682,13 @@ function renderColorOptions() {
     el.className = 'color-option';
     el.style.background = t.primary;
     el.textContent = t.name;
-    el.onclick = () => {
+    el.onclick = async () => {
       document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
       el.classList.add('active');
       applyTheme(t); store.set('theme', t);
+      if (currentUser) {
+        await sb.from('user_settings').upsert({user_id: currentUser.id, theme: t, updated_at: new Date().toISOString()});
+      }
       showSettingsToast();
     };
     c.appendChild(el);
@@ -1567,7 +1720,7 @@ function applyTheme(t) {
 }
 
 // ══ APPEARANCE ══
-function setAppearance(mode) {
+async function setAppearance(mode) {
   if (mode === 'light') {
     document.body.classList.add('light-mode');
   } else {
@@ -1578,6 +1731,9 @@ function setAppearance(mode) {
   const btnLight = document.getElementById('btnLight');
   if (btnDark) btnDark.classList.toggle('active', mode === 'dark');
   if (btnLight) btnLight.classList.toggle('active', mode === 'light');
+  if (currentUser) {
+    await sb.from('user_settings').upsert({user_id: currentUser.id, appearance: mode, updated_at: new Date().toISOString()});
+  }
 }
 
 function renderAreaResetGrid() {
@@ -1596,12 +1752,14 @@ function renderAreaResetGrid() {
   });
 }
 
-function resetAreaData(areaName) {
+async function resetAreaData(areaName) {
   const count = sessions.filter(s => s.area === areaName).length;
   if (!count) { alert(`No sessions logged for ${areaName}.`); return; }
   if (confirm(`Delete all ${count} session${count > 1 ? 's' : ''} for ${areaName}? This cannot be undone.`)) {
+    if (currentUser) {
+      await sb.from('sessions').delete().eq('user_id', currentUser.id).eq('area', areaName);
+    }
     sessions = sessions.filter(s => s.area !== areaName);
-    store.set('sessions', sessions);
     renderHome();
     renderAreaResetGrid();
   }
@@ -1610,7 +1768,10 @@ function resetAreaData(areaName) {
 async function resetAllData() {
   if (confirm('Delete ALL session data? This cannot be undone.')) {
     if (confirm('Permanently remove all logged sessions?')) {
-      sessions = []; store.del('sessions');
+      if (currentUser) {
+        await sb.from('sessions').delete().eq('user_id', currentUser.id);
+      }
+      sessions = [];
       renderHome(); renderHistory();
       alert('All session data reset.');
     }
