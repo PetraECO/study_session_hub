@@ -108,9 +108,9 @@
       font-size:.87em;font-weight:700;color:#fff;
       border:1px solid rgba(255,255,255,.15);
       background:rgba(255,255,255,.06);
-      opacity:0;transform:translateY(4px);transition:all .2s ease
+      opacity:1;transition:all .2s ease
     }
-    .area-card:hover .start-hint{opacity:1;transform:translateY(0)}
+    .area-card:hover .start-hint{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25)}
 
     /* ══ SESSION START MODAL ══ */
     .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;justify-content:center;align-items:flex-end}
@@ -1258,7 +1258,7 @@ function renderAreaCards() {
     card.style.setProperty('--accent-color', area.color);
     card.style.borderTopColor = area.color;
     const hoursDisplay = done > 0 ? `${done.toFixed(1)}h` : '—';
-    const pctDisplay   = done > 0 ? `${pct.toFixed(0)}% of goal` : 'No sessions yet this week';
+    const pctDisplay   = done > 0 ? `${pct.toFixed(0)}% of goal` : 'Ready when you are';
     card.innerHTML = `
       <div class="area-icon-wrap" style="background:${area.color}22;border:1px solid ${area.color}44">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${area.color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${getAreaIconPath(area.name)}</svg>
@@ -1405,6 +1405,16 @@ function renderHomeCard() {
   const weekHours = week.reduce((s,x) => s + x.hours, 0);
   const todayHours= todaySess.reduce((s,x) => s + x.hours, 0);
 
+  // ── Last session nudge ──
+  let lastSessionNudge = '';
+  if (sessions.length > 0 && todaySess.length === 0) {
+    const last = new Date(sessions[0].date);
+    const daysSince = Math.floor((Date.now() - last) / 86400000);
+    if (daysSince === 1) lastSessionNudge = 'You worked yesterday — nice. Today can be just 5 minutes.';
+    else if (daysSince === 2) lastSessionNudge = 'It\'s been a couple of days. No pressure — whenever you\'re ready.';
+    else if (daysSince >= 3) lastSessionNudge = 'Been a while. Starting is the hardest part — just 5 minutes counts.';
+  }
+
   // ── Sub-line ──
   let subLine;
   if (streak >= 3) {
@@ -1414,9 +1424,9 @@ function renderHomeCard() {
   } else if (todaySess.length > 0) {
     subLine = `You've logged ${todayHours.toFixed(1)}h today. Keep the momentum.`;
   } else if (week.length > 0) {
-    subLine = `${weekHours.toFixed(1)}h logged this week. Start today's session when you're ready.`;
+    subLine = lastSessionNudge || `${weekHours.toFixed(1)}h this week. Today's session is waiting.`;
   } else {
-    subLine = 'Pick a focus area below to log your first session.';
+    subLine = 'No pressure. Pick a focus area below whenever you\'re ready.';
   }
 
   // ── Area nudge ──
@@ -1447,11 +1457,48 @@ function renderHomeCard() {
       }).join('')
     : '';
 
+  const showQuickStart = todaySess.length === 0;
   el.innerHTML = `
-    <div class="home-card-title">${getGreeting()}</div>
-    <div class="home-card-desc">${subLine}</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div>
+        <div class="home-card-title">${getGreeting()}</div>
+        <div class="home-card-desc">${subLine}</div>
+      </div>
+      ${showQuickStart ? `<button onclick="quickStart()" style="flex-shrink:0;padding:9px 16px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-family:inherit;font-size:.82em;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 3px 12px rgba(102,126,234,.4)" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">Just 5 min →</button>` : ''}
+    </div>
     ${nudge ? `<div class="home-card-nudge">${nudge}</div>` : ''}
     ${recentHTML}`;
+}
+
+// ══ QUICK START ══
+function quickStart() {
+  // Pick most-behind area, default to first
+  const week = getWeekSessions();
+  const mostBehind = AREAS.map(area => {
+    const done = week.filter(s => s.area === area.name).reduce((s,x) => s + x.hours, 0);
+    const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name] || {weekly:10}).weekly;
+    return { area, pct: done / goal };
+  }).sort((a,b) => a.pct - b.pct)[0];
+  const area = mostBehind ? mostBehind.area : AREAS[0];
+
+  // Open modal with 5-min preset and placeholder task
+  openSessionModal(area);
+  setTimeout(() => {
+    modalDuration = 5;
+    document.querySelectorAll('.timer-option').forEach(o => o.classList.remove('active'));
+    // pre-fill task so they can just hit go
+    const taskInput = document.getElementById('sessionTask');
+    if (taskInput && !taskInput.value) taskInput.placeholder = 'What are you working on? (optional)';
+    // add a subtle "just 5 min" label
+    const existing = document.getElementById('quickStartLabel');
+    if (!existing) {
+      const lbl = document.createElement('div');
+      lbl.id = 'quickStartLabel';
+      lbl.style.cssText = 'text-align:center;font-size:.8em;color:rgba(255,255,255,.45);margin-top:-8px;margin-bottom:12px';
+      lbl.textContent = '⚡ Quick 5-minute session — just enough to get started';
+      document.getElementById('sessionTask').parentNode.insertBefore(lbl, document.getElementById('sessionTask'));
+    }
+  }, 50);
 }
 
 // ══ SESSION MODAL ══
@@ -1701,7 +1748,15 @@ async function saveAndClose() {
       ...newSession
     }).select().single();
     if (!error && data) newSession.id = data.id;
+    const wasFirstToday = getTodaySessions().length === 0;
     sessions.unshift(newSession);
+    // Extra celebration for first session of the day
+    if (wasFirstToday) {
+      document.getElementById('celebEmoji').textContent = '🌟';
+      document.getElementById('celebTitle').textContent = 'First one of the day!';
+      document.getElementById('celebMsg').textContent = 'That\'s the hardest part done. Everything else is momentum.';
+      launchConfetti();
+    }
   }
   document.getElementById('celebNotes').value = '';
   closeCelebration();
