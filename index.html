@@ -1102,11 +1102,12 @@ async function loadUserData() {
   if (settings) {
     if (settings.areas && settings.areas.length === 3) AREAS = settings.areas;
     if (settings.goals) areaGoals = settings.goals;
-    // Store name for greeting
-    if (settings.name) store.set('profile', {name: settings.name, email: currentUser.email});
+    // Always write profile so greeting never falls back to email
+    store.set('profile', {name: settings.name || '', email: currentUser.email});
   } else {
     AREAS = [...DEFAULT_AREAS];
     areaGoals = {...DEFAULT_GOALS};
+    store.set('profile', {name: '', email: currentUser.email});
   }
 
   // Load sessions
@@ -1368,7 +1369,7 @@ async function signOut() {
 
 // ══ PROFILE ══
 function getProfile() {
-  return store.get('profile') || {name: currentUser?.email?.split('@')[0] || '', email: currentUser?.email || ''};
+  return store.get('profile') || {name: '', email: currentUser?.email || ''};
 }
 
 async function saveProfileFromSettings() {
