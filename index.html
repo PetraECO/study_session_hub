@@ -283,6 +283,11 @@
     }
     .home-card-title{font-size:1em;font-weight:800;color:#fff;margin-bottom:4px}
     .home-card-desc{color:rgba(255,255,255,.6);font-size:.88em;line-height:1.55;margin-bottom:0}
+    .home-card-nudge{
+      margin-top:10px;padding:8px 12px;border-radius:8px;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+      font-size:.83em;color:rgba(255,255,255,.65);font-weight:500
+    }
     .recent-header{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.38);margin:18px 0 10px}
     .recent-entry{
       display:flex;align-items:center;gap:12px;
@@ -381,6 +386,46 @@
       background:transparent;color:#fff;transition:all .2s
     }
     .celeb-btn-ghost:hover{background:rgba(255,255,255,.1)}
+  /* ══ ONBOARDING OVERLAY ══ */
+  .onboarding-overlay{
+    position:fixed;inset:0;z-index:4000;
+    background:#0d0d1f;
+    display:flex;align-items:center;justify-content:center;
+    opacity:1;transition:opacity .4s
+  }
+  .onboarding-overlay.hidden{display:none}
+  .onboarding-box{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    border-radius:24px;padding:48px 40px 40px;
+    max-width:420px;width:90%;text-align:center;
+    box-shadow:0 24px 80px rgba(0,0,0,.5)
+  }
+  .onboarding-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px}
+  .onboarding-logo h2{font-size:1.6em;font-weight:800;color:#fff;margin:0}
+  .onboarding-title{font-size:1.4em;font-weight:800;color:#fff;margin-bottom:8px}
+  .onboarding-sub{font-size:.9em;color:rgba(255,255,255,.55);margin-bottom:28px;line-height:1.5}
+  .onboarding-field{text-align:left;margin-bottom:16px}
+  .onboarding-field label{display:block;font-size:.8em;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .onboarding-field input{
+    width:100%;padding:12px 16px;background:rgba(255,255,255,.08);
+    border:1.5px solid rgba(255,255,255,.15);border-radius:12px;
+    color:#fff;font-family:inherit;font-size:1em;font-weight:500;transition:border-color .2s
+  }
+  .onboarding-field input:focus{outline:none;border-color:var(--primary);background:rgba(255,255,255,.12)}
+  .onboarding-field input::placeholder{color:rgba(255,255,255,.28)}
+  .btn-onboard{
+    width:100%;padding:15px;margin-top:8px;border:none;border-radius:12px;
+    background:var(--primary);color:#fff;font-family:inherit;
+    font-size:1.05em;font-weight:800;cursor:pointer;transition:all .2s;
+    box-shadow:0 4px 20px rgba(102,126,234,.4)
+  }
+  .btn-onboard:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  .onboard-skip{
+    margin-top:14px;font-size:.83em;color:rgba(255,255,255,.35);
+    cursor:pointer;transition:color .2s;background:none;border:none;font-family:inherit
+  }
+  .onboard-skip:hover{color:rgba(255,255,255,.6)}
+
   /* ══ DARK BASE: inputs / labels ══ */
   label{color:rgba(255,255,255,.55)}
   input,textarea,select{color:#fff}
@@ -417,6 +462,7 @@
   body.light-mode .home-card{background:#fff;border-color:#e4e4e7;box-shadow:0 1px 6px rgba(0,0,0,.06);backdrop-filter:none}
   body.light-mode .home-card-title{color:#18181b}
   body.light-mode .home-card-desc{color:#71717a}
+  body.light-mode .home-card-nudge{background:#f4f4f5;border-color:#e4e4e7;color:#52525b}
   body.light-mode .recent-entry{background:#f9f9fa}
   body.light-mode .recent-area{color:#18181b}
   body.light-mode .recent-task{color:#71717a}
@@ -474,6 +520,34 @@
   </style>
 </head>
 <body>
+
+<!-- ══ ONBOARDING ══ -->
+<div class="onboarding-overlay hidden" id="onboardingOverlay">
+  <div class="onboarding-box">
+    <div class="onboarding-logo">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="og" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
+        </linearGradient></defs>
+        <circle cx="22" cy="22" r="19" stroke="url(#og)" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-dasharray="110 10" transform="rotate(-90 22 22)"/>
+        <polyline points="12,15 22,31 32,15" stroke="url(#og)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <h2>Vincit</h2>
+    </div>
+    <div class="onboarding-title">Let's get you set up</div>
+    <div class="onboarding-sub">Just your name and email — stored on this device only, never sent anywhere.</div>
+    <div class="onboarding-field">
+      <label>Your name</label>
+      <input type="text" id="onboardName" placeholder="e.g. Petra" maxlength="50" autocomplete="name">
+    </div>
+    <div class="onboarding-field">
+      <label>Email address</label>
+      <input type="email" id="onboardEmail" placeholder="e.g. you@example.com" autocomplete="email">
+    </div>
+    <button class="btn-onboard" onclick="saveProfile()">Start using Vincit →</button>
+    <button class="onboard-skip" onclick="skipOnboarding()">Skip for now</button>
+  </div>
+</div>
 
 <!-- ══ SETTINGS TOAST ══ -->
 <div class="settings-toast" id="settingsToast">
@@ -656,6 +730,22 @@
     <h2>Settings</h2>
 
     <div class="settings-section">
+      <h3>👤 Profile</h3>
+      <p>Your name and email are stored locally on this device only.</p>
+      <div class="goal-grid" style="grid-template-columns:1fr 1fr">
+        <div class="goal-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <label style="font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Name</label>
+          <input type="text" id="profileName" placeholder="Your name" maxlength="50" style="width:100%;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:.95em">
+        </div>
+        <div class="goal-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <label style="font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Email</label>
+          <input type="email" id="profileEmail" placeholder="you@example.com" style="width:100%;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:.95em">
+        </div>
+      </div>
+      <button class="btn-save-goals" onclick="saveProfileFromSettings()" style="margin-top:14px">Save Profile</button>
+    </div>
+
+    <div class="settings-section">
       <h3>✏️ Your Areas</h3>
       <p>Rename, recolour, or change the icon for each focus area. Note: renaming won't update past sessions.</p>
       <div class="area-edit-grid" id="areaEditGrid"></div>
@@ -767,6 +857,11 @@ function init() {
   const savedAppearance = store.get('appearance') || 'dark';
   setAppearance(savedAppearance);
 
+  // Show onboarding if no profile yet
+  if (!store.get('profile')) {
+    document.getElementById('onboardingOverlay').classList.remove('hidden');
+  }
+
   // Load theme
   const theme = store.get('theme') || COLOR_THEMES[0];
   applyTheme(theme);
@@ -864,22 +959,95 @@ function renderAreaCards() {
     card.className = 'area-card';
     card.style.setProperty('--accent-color', area.color);
     card.style.borderTopColor = area.color;
+    const hoursDisplay = done > 0 ? `${done.toFixed(1)}h` : '—';
+    const pctDisplay   = done > 0 ? `${pct.toFixed(0)}% of goal` : 'No sessions yet this week';
     card.innerHTML = `
       <span class="area-icon">${area.icon}</span>
       <div class="area-name">${area.name}</div>
-      <div class="area-hours">${done.toFixed(1)}h</div>
+      <div class="area-hours">${hoursDisplay}</div>
       <div class="area-goal-text">of ${goal}h this week</div>
       <div class="area-bar-wrap"><div class="area-bar-fill" style="width:${pct}%;background:${area.color}"></div></div>
-      <div class="area-pct">${pct.toFixed(0)}% of goal</div>
+      <div class="area-pct">${pctDisplay}</div>
       <div class="start-hint" style="background:${area.color}">▶ Start Session</div>`;
     card.onclick = () => openSessionModal(area);
     grid.appendChild(card);
   });
 }
 
+// ══ PROFILE ══
+function getProfile() {
+  return store.get('profile') || {name:'', email:''};
+}
+
+function saveProfile() {
+  const name  = document.getElementById('onboardName').value.trim();
+  const email = document.getElementById('onboardEmail').value.trim();
+  if (!name) { document.getElementById('onboardName').focus(); return; }
+  store.set('profile', {name, email});
+  document.getElementById('onboardingOverlay').classList.add('hidden');
+  renderHome();
+}
+
+function skipOnboarding() {
+  store.set('profile', {name:'', email:''});
+  document.getElementById('onboardingOverlay').classList.add('hidden');
+}
+
+function saveProfileFromSettings() {
+  const name  = document.getElementById('profileName').value.trim();
+  const email = document.getElementById('profileEmail').value.trim();
+  store.set('profile', {name, email});
+  showSettingsToast();
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  const profile = getProfile();
+  const first = profile.name ? `, ${profile.name.split(' ')[0]}` : '';
+  if (h >= 5  && h < 12) return `Good morning${first}`;
+  if (h >= 12 && h < 17) return `Good afternoon${first}`;
+  if (h >= 17 && h < 21) return `Good evening${first}`;
+  return `Working late${first}`;
+}
+
 function renderHomeCard() {
   const el = document.getElementById('homeCard');
   if (!el) return;
+
+  const streak    = calculateStreak();
+  const week      = getWeekSessions();
+  const todaySess = getTodaySessions();
+  const weekHours = week.reduce((s,x) => s + x.hours, 0);
+  const todayHours= todaySess.reduce((s,x) => s + x.hours, 0);
+
+  // ── Sub-line ──
+  let subLine;
+  if (streak >= 3) {
+    subLine = `🔥 ${streak}-day streak — you're on a roll.`;
+  } else if (streak > 0) {
+    subLine = `🔥 ${streak}-day streak — keep it going.`;
+  } else if (todaySess.length > 0) {
+    subLine = `You've logged ${todayHours.toFixed(1)}h today. Keep the momentum.`;
+  } else if (week.length > 0) {
+    subLine = `${weekHours.toFixed(1)}h logged this week. Start today's session when you're ready.`;
+  } else {
+    subLine = 'Pick a focus area below to log your first session.';
+  }
+
+  // ── Area nudge ──
+  let nudge = '';
+  const areaProgress = AREAS.map(area => {
+    const done = week.filter(s => s.area === area.name).reduce((s,x) => s + x.hours, 0);
+    const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name] || {weekly:10}).weekly;
+    return { area, done, goal, pct: goal > 0 ? done / goal : 0 };
+  });
+  const behind = areaProgress.filter(x => x.pct < 1).sort((a,b) => a.pct - b.pct)[0];
+  if (behind && week.length > 0) {
+    const left = Math.max(0, behind.goal - behind.done).toFixed(1);
+    nudge = `${behind.area.icon} ${behind.area.name} is ${behind.done === 0 ? 'untouched this week' : `${left}h short of your weekly goal`}.`;
+  }
+
+  // ── Recent sessions ──
   const recentHTML = sessions.length
     ? '<div class="recent-header">Recent Sessions</div>' +
       sessions.slice().reverse().slice(0, 3).map(s => {
@@ -893,9 +1061,11 @@ function renderHomeCard() {
         </div>`;
       }).join('')
     : '';
+
   el.innerHTML = `
-    <div class="home-card-title">Welcome to Vincit</div>
-    <div class="home-card-desc">Pick a focus area to start a session. Vincit tracks your time, builds your streak, and keeps you moving.</div>
+    <div class="home-card-title">${getGreeting()}</div>
+    <div class="home-card-desc">${subLine}</div>
+    ${nudge ? `<div class="home-card-nudge">${nudge}</div>` : ''}
     ${recentHTML}`;
 }
 
@@ -1266,6 +1436,12 @@ function renderHistory() {
 
 // ══ SETTINGS ══
 function renderSettings() {
+  // Profile
+  const profile = getProfile();
+  const pn = document.getElementById('profileName');
+  const pe = document.getElementById('profileEmail');
+  if (pn) pn.value = profile.name || '';
+  if (pe) pe.value = profile.email || '';
   renderAreaEditGrid();
   renderGoalGrid();
   renderColorOptions();
