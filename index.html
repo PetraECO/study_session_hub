@@ -910,6 +910,7 @@
       <div class="celeb-notes-label">Notes (optional)</div>
       <textarea class="celeb-notes" id="celebNotes" placeholder="What did you work on?&#10;Any blockers? Wins?"></textarea>
     </div>
+    <div id="celebSaveError" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);border-radius:8px;color:#fca5a5;font-size:.8em;line-height:1.4;text-align:left"></div>
     <div class="celeb-btns">
       <button class="celeb-btn-primary" onclick="saveAndClose()">Save &amp; Done</button>
       <button class="celeb-btn-ghost" onclick="startBreakFromCeleb()">☕ Take a Break</button>
@@ -1298,22 +1299,34 @@ async function loadUserData() {
     store.set('profile', {name: existingProfile.name || '', email: currentUser.email});
   }
 
-  // Load sessions
-  const { data: rows } = await sb
+  // Load sessions from Supabase, with localStorage cache as fallback
+  const { data: rows, error: sessErr } = await sb
     .from('sessions')
     .select('*')
     .eq('user_id', currentUser.id)
     .order('date', {ascending: false});
 
-  sessions = (rows || []).map(r => ({
-    id: r.id,
-    area: r.area,
-    task: r.task || '',
-    hours: parseFloat(r.hours) || 0,
-    notes: r.notes || '',
-    date: r.date,
-    pomodoros: r.pomodoros || 0
-  }));
+  if (sessErr) {
+    console.error('Sessions load error:', sessErr);
+    // Fall back to localStorage cache so data isn't lost on a bad request
+    const cached = store.get('sessions_cache');
+    if (cached && cached.length) {
+      sessions = cached;
+      console.warn('Using cached sessions from localStorage');
+    }
+  } else {
+    sessions = (rows || []).map(r => ({
+      id: r.id,
+      area: r.area,
+      task: r.task || '',
+      hours: parseFloat(r.hours) || 0,
+      notes: r.notes || '',
+      date: r.date,
+      pomodoros: r.pomodoros || 0
+    }));
+    // Keep cache in sync with Supabase
+    cacheSessionsLocally();
+  }
 }
 
 function showApp() {
@@ -2069,16 +2082,33 @@ async function saveAndClose() {
       user_id: currentUser.id,
       ...newSession
     }).select().single();
-    if (!error && data) newSession.id = data.id;
+
+    if (error) {
+      // Surface the error clearly — session won't survive a refresh
+      console.error('Session save failed:', error);
+      const errMsg = document.getElementById('celebSaveError');
+      if (errMsg) {
+        errMsg.textContent = `⚠️ Couldn't save to cloud: ${error.message}. Your session is shown here but may not persist after a refresh.`;
+        errMsg.style.display = 'block';
+      }
+    } else if (data) {
+      newSession.id = data.id;
+    }
+
     const wasFirstToday = getTodaySessions().length === 0;
     sessions.unshift(newSession);
-    // Extra celebration for first session of the day
+    // Cache locally as resilience backup
+    cacheSessionsLocally();
+
     if (wasFirstToday) {
       document.getElementById('celebEmoji').textContent = '🌟';
       document.getElementById('celebTitle').textContent = 'First one of the day!';
       document.getElementById('celebMsg').textContent = 'That\'s the hardest part done. Everything else is momentum.';
       launchConfetti();
     }
+
+    // If there was an error, keep the overlay open so user sees the warning
+    if (error) return;
   }
   document.getElementById('celebNotes').value = '';
   closeCelebration();
@@ -2088,6 +2118,11 @@ async function saveAndClose() {
   if (endBtn) endBtn.style.display = 'none';
   document.getElementById('noSessionMsg').style.display = '';
   document.getElementById('timerMain').style.display = 'none';
+}
+
+function cacheSessionsLocally() {
+  // Keep last 100 sessions in localStorage as a fallback if Supabase is unavailable
+  store.set('sessions_cache', sessions.slice(0, 100));
 }
 
 function startBreakFromCeleb() {
