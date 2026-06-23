@@ -402,6 +402,17 @@
     .focus-nudge{font-size:.98em;font-weight:500;color:rgba(255,255,255,.55);margin-bottom:30px;min-height:1.4em;transition:opacity .5s ease;line-height:1.5}
     .focus-last-session{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;font-size:.82em;color:rgba(255,255,255,.5);margin-bottom:20px}
     .focus-last-session strong{color:rgba(255,255,255,.8);font-weight:600}
+    .focus-first-use{
+      display:flex;align-items:flex-start;gap:12px;padding:16px 18px;margin-bottom:20px;
+      background:linear-gradient(135deg,rgba(102,126,234,.1),rgba(118,75,162,.1));
+      border:1.5px solid rgba(102,126,234,.22);border-radius:14px;text-align:left
+    }
+    .focus-first-use-icon{font-size:1.6em;flex-shrink:0;margin-top:1px}
+    .focus-first-use-text{font-size:.88em;color:rgba(255,255,255,.65);line-height:1.55;font-weight:500}
+    .focus-first-use-text strong{color:rgba(255,255,255,.9);font-weight:700}
+    body.light-mode .focus-first-use{background:rgba(102,126,234,.07);border-color:rgba(102,126,234,.2)}
+    body.light-mode .focus-first-use-text{color:rgba(0,0,0,.55)}
+    body.light-mode .focus-first-use-text strong{color:rgba(0,0,0,.8)}
     .focus-area-label{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);margin-bottom:12px}
     .focus-area-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px}
     .focus-area-card:last-child:nth-child(odd){grid-column:1/-1}
@@ -588,20 +599,39 @@
     position:fixed;inset:0;z-index:5000;
     background:#0d0d1f;
     display:flex;align-items:center;justify-content:center;
-    transition:opacity .5s ease
+    transition:opacity .5s ease;overflow:hidden
   }
   .splash-overlay.hidden{display:none}
-  .splash-inner{
-    text-align:center;padding:40px 24px;max-width:480px;width:90%
+  /* Ambient ripple rings in background */
+  .splash-ring{
+    position:absolute;left:50%;top:42%;border-radius:50%;
+    border:1px solid rgba(102,126,234,.12);pointer-events:none;
+    animation:sRipple 5s ease-out infinite;
   }
-  .splash-logo{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:32px}
+  .splash-ring:nth-child(2){animation-delay:1.7s}
+  .splash-ring:nth-child(3){animation-delay:3.4s}
+  @keyframes sRipple{
+    0%  {width:60px;height:60px;opacity:.7;transform:translate(-50%,-50%)}
+    100%{width:700px;height:700px;opacity:0;transform:translate(-50%,-50%)}
+  }
+  @keyframes pebbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .splash-inner{
+    text-align:center;padding:40px 24px;max-width:480px;width:90%;position:relative;z-index:1
+  }
+  .splash-logo{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:36px}
+  .splash-logo svg{animation:pebbFloat 3.2s ease-in-out infinite}
   .splash-logo h1{font-size:2.8em;font-weight:800;color:#fff;margin:0;letter-spacing:-.5px}
   .splash-tagline{
-    font-size:1.25em;font-weight:600;color:rgba(255,255,255,.9);
-    margin-bottom:10px;line-height:1.4
+    font-size:1.45em;font-weight:800;color:#fff;
+    margin-bottom:18px;line-height:1.3;letter-spacing:-.3px
   }
   .splash-sub{
-    font-size:.95em;color:rgba(255,255,255,.45);margin-bottom:48px;line-height:1.6
+    font-size:.97em;color:rgba(255,255,255,.48);margin-bottom:52px;line-height:1.75
+  }
+  .splash-highlight{
+    background:linear-gradient(135deg,#667eea,#a78bfa);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    font-weight:800
   }
   .splash-actions{display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto}
   .splash-btn-primary{
@@ -784,24 +814,32 @@
 <!-- ══ AUTH ══ -->
 <!-- ══ SPLASH SCREEN ══ -->
 <div class="splash-overlay hidden" id="splashOverlay">
+  <!-- Ambient ripple rings -->
+  <div class="splash-ring"></div>
+  <div class="splash-ring"></div>
+  <div class="splash-ring"></div>
   <div class="splash-inner">
     <div class="splash-logo">
-      <svg width="52" height="52" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="64" height="64" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs><linearGradient id="sg" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
         </linearGradient></defs>
         <ellipse cx="20" cy="26" rx="12" ry="10" fill="url(#sg)" opacity=".95"/>
         <ellipse cx="20" cy="26" rx="12" ry="10" fill="white" opacity=".08"/>
         <ellipse cx="16" cy="21" rx="4" ry="2.5" fill="white" opacity=".22" transform="rotate(-20 16 21)"/>
-        <path d="M34 30 Q38 22 34 14" stroke="url(#sg)" stroke-width="2" stroke-linecap="round" fill="none" opacity=".5"/>
-        <path d="M37 32 Q43 22 37 12" stroke="url(#sg)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".28"/>
+        <path d="M34 30 Q38 22 34 14" stroke="#667eea" stroke-width="2" stroke-linecap="round" fill="none" opacity=".75"/>
+        <path d="M37 32 Q43 22 37 12" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".45"/>
       </svg>
       <h1>Pebbl</h1>
     </div>
-    <div class="splash-tagline">Small steps. Real progress.</div>
-    <div class="splash-sub">A gentle focus tracker for scattered minds — built around how you actually work, not how you think you should.</div>
+    <div class="splash-tagline">Productivity apps get one thing backwards.</div>
+    <div class="splash-sub">
+      They're built for people who already want to start.<br><br>
+      Pebbl is for the <span class="splash-highlight">first pebble</span> —
+      that small, reluctant push when everything in you wants to wait.
+    </div>
     <div class="splash-actions">
-      <button class="splash-btn-primary" onclick="dismissSplash('signup')">Get started →</button>
+      <button class="splash-btn-primary" onclick="dismissSplash('signup')">Drop your first pebble →</button>
       <button class="splash-btn-ghost" onclick="dismissSplash('signin')">I already have an account</button>
     </div>
   </div>
@@ -1040,6 +1078,13 @@
       <div class="focus-greeting" id="focusGreeting"></div>
       <div class="focus-nudge" id="focusNudge"></div>
       <div class="focus-last-session" id="focusLastSession" style="display:none"></div>
+      <div class="focus-first-use" id="focusFirstUse" style="display:none">
+        <span class="focus-first-use-icon">🪨</span>
+        <div class="focus-first-use-text">
+          <strong>Welcome to Pebbl.</strong><br>
+          Nobody builds for the first pebble. We do. Tap an area below and drop yours.
+        </div>
+      </div>
       <div class="focus-area-label">Where are you focusing?</div>
       <div class="focus-area-grid" id="focusAreaGrid"></div>
       <div id="focusStartSection" style="display:none">
@@ -1586,6 +1631,9 @@ function renderFocus() {
   renderLastSessionNudge();
   renderFocusAreaGrid();
   startNudgeRotation();
+  // First-use callout: shown only when user has no sessions yet
+  const ffu = document.getElementById('focusFirstUse');
+  if (ffu) ffu.style.display = (!activeArea && sessions.length === 0) ? '' : 'none';
   // If a session is active, stay on timer view
   if (activeArea) {
     document.getElementById('focusPreSession').style.display = 'none';
