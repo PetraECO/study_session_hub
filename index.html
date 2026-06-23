@@ -1123,6 +1123,9 @@
 
     <!-- Active timer (shown when session is running) -->
     <div id="focusTimerSection" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+        <button onclick="cancelSession()" title="Cancel and go back" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:1.4em;cursor:pointer;padding:4px 8px;line-height:1;transition:color .2s" onmouseover="this.style.color='rgba(255,255,255,.7)'" onmouseout="this.style.color='rgba(255,255,255,.3)'">✕</button>
+      </div>
       <div class="timer-container">
         <div id="timerSessionLabel" class="timer-session-label">💼 Work</div>
         <div id="timerTaskLabel" class="timer-task-label"></div>
@@ -1645,6 +1648,17 @@ function resetFocusToPreSession() {
   if (timer) timer.style.display = 'none';
   if (ss) ss.style.display = 'none';
   renderFocusAreaGrid();
+}
+
+function cancelSession() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  activeArea = '';
+  activeTask = '';
+  sessionElapsed = 0;
+  sessionStartedAt = null;
+  resetFocusToPreSession();
+  renderFocus();
 }
 
 function startQuickSession() {
