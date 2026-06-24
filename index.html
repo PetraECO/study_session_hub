@@ -336,7 +336,21 @@
 
     /* ══ HISTORY ══ */
     .session-log{margin-top:4px}
-    .log-entry{background:rgba(255,255,255,.06);padding:16px;margin-bottom:10px;border-radius:12px;border-left:4px solid var(--primary)}
+    .log-accordion{margin-bottom:8px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.07)}
+    .log-accordion-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:13px 16px;cursor:pointer;
+      background:rgba(255,255,255,.05);transition:background .2s;user-select:none
+    }
+    .log-accordion-header:hover{background:rgba(255,255,255,.09)}
+    .log-accordion-date{font-size:.87em;font-weight:700;color:#fff}
+    .log-accordion-meta{display:flex;align-items:center;gap:12px;font-size:.76em;color:rgba(255,255,255,.4)}
+    .log-accordion-arrow{transition:transform .25s ease;display:inline-block;font-size:.7em;color:rgba(255,255,255,.3)}
+    .log-accordion.open .log-accordion-arrow{transform:rotate(180deg)}
+    .log-accordion-body{display:none}
+    .log-accordion.open .log-accordion-body{display:block}
+    .log-entry{background:rgba(255,255,255,.03);padding:14px 16px;border-left:4px solid var(--primary);border-bottom:1px solid rgba(255,255,255,.04)}
+    .log-entry:last-child{border-bottom:none}
     .log-header{display:flex;justify-content:space-between;margin-bottom:5px;font-weight:700;color:#e2e8f0;font-size:.9em}
     .log-task{color:rgba(255,255,255,.65);font-size:.9em;margin-bottom:4px;font-weight:500}
     .log-notes{color:rgba(255,255,255,.45);font-size:.88em}
@@ -2547,27 +2561,65 @@ function renderMonthlyProgress() {
 function renderHistory() {
   const log = document.getElementById('sessionLog');
   if (!sessions.length) {
-    log.innerHTML = '<div class="log-empty">No sessions yet. Start one from Home.</div>';
+    log.innerHTML = '<div class="log-empty">No sessions yet. Start one from Focus.</div>';
     return;
   }
   log.innerHTML = '';
-  const area = name => AREAS.find(a=>a.name===name);
-  sessions.slice().reverse().forEach(s => {
-    const a = area(s.area);
-    const color = a ? a.color : '#667eea';
+  const getArea = name => AREAS.find(a => a.name === name);
+
+  // Group sessions by local date, most recent first
+  const groups = new Map();
+  sessions.slice().forEach(s => {
     const d = new Date(s.date);
-    const el = document.createElement('div');
-    el.className = 'log-entry';
-    el.style.borderLeftColor = color;
-    el.innerHTML = `
-      <div class="log-header">
-        <span>${a?a.icon:''} ${s.area}</span>
-        <span>${s.hours.toFixed(1)}h &nbsp;·&nbsp; ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    const isSameDay = (a, b) => a.toDateString() === b.toDateString();
+    let label;
+    if (isSameDay(d, today)) label = 'Today';
+    else if (isSameDay(d, yesterday)) label = 'Yesterday';
+    else label = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(s);
+  });
+
+  let first = true;
+  groups.forEach((daySessions, dateLabel) => {
+    const totalHours = daySessions.reduce((sum, s) => sum + s.hours, 0);
+    const count = daySessions.length;
+
+    const accordion = document.createElement('div');
+    accordion.className = `log-accordion${first ? ' open' : ''}`;
+    accordion.innerHTML = `
+      <div class="log-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="log-accordion-date">${dateLabel}</span>
+        <div class="log-accordion-meta">
+          <span>${totalHours.toFixed(1)}h · ${count} session${count !== 1 ? 's' : ''}</span>
+          <span class="log-accordion-arrow">▼</span>
+        </div>
       </div>
-      <div class="log-task">${s.task || ''}</div>
-      ${s.notes ? `<div class="log-notes">${s.notes}</div>` : ''}
-      ${s.pomodoros ? `<div style="margin-top:5px;font-size:.82em;font-weight:700;color:${color}">🍅 ${s.pomodoros} pomodoro${s.pomodoros>1?'s':''}</div>` : ''}`;
-    log.appendChild(el);
+      <div class="log-accordion-body"></div>`;
+
+    const body = accordion.querySelector('.log-accordion-body');
+    daySessions.forEach(s => {
+      const a = getArea(s.area);
+      const color = a ? a.color : '#667eea';
+      const d = new Date(s.date);
+      const el = document.createElement('div');
+      el.className = 'log-entry';
+      el.style.borderLeftColor = color;
+      el.innerHTML = `
+        <div class="log-header">
+          <span>${a ? a.icon : '🪨'} ${s.area}</span>
+          <span>${s.hours.toFixed(1)}h &nbsp;·&nbsp; ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+        </div>
+        ${s.task ? `<div class="log-task">${s.task}</div>` : ''}
+        ${s.notes ? `<div class="log-notes">${s.notes}</div>` : ''}
+        ${s.pomodoros ? `<div style="margin-top:5px;font-size:.82em;font-weight:700;color:${color}">🍅 ${s.pomodoros} pomodoro${s.pomodoros > 1 ? 's' : ''}</div>` : ''}`;
+      body.appendChild(el);
+    });
+
+    log.appendChild(accordion);
+    first = false;
   });
 }
 
