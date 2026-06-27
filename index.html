@@ -1421,13 +1421,18 @@ async function loadUserData() {
   if (settings) {
     if (settings.areas && Array.isArray(settings.areas) && settings.areas.length > 0) {
       AREAS = settings.areas;
-      // Sync localStorage so the cache always reflects what Supabase has
-      // Only do this when Supabase actually has data — prevents overwriting with stale defaults
+      // Keep localStorage cache in sync only when Supabase clearly has good data
+      // (onConflict fix means Supabase now correctly updates rather than inserting duplicates)
       store.set('areas_cache', AREAS);
     } else {
-      // Supabase has no areas row yet — use localStorage cache rather than defaults
+      // Supabase returned no areas (null settings or empty array) — use localStorage backup
       const cachedAreas = store.get('areas_cache');
-      if (cachedAreas && Array.isArray(cachedAreas) && cachedAreas.length > 0) AREAS = cachedAreas;
+      if (cachedAreas && Array.isArray(cachedAreas) && cachedAreas.length > 0) {
+        AREAS = cachedAreas;
+        // Try to push the cached areas up to Supabase now that we know it's missing them
+        // (fire and forget — don't block the load)
+        setTimeout(() => saveSettings(), 1000);
+      }
     }
     if (settings.goals) areaGoals = settings.goals;
     // Use Supabase name if available, otherwise keep whatever's in localStorage
@@ -2655,7 +2660,7 @@ async function saveSettings() {
     goals:      areaGoals,
     appearance: store.get('appearance') || 'dark',
     theme:      store.get('theme') || null
-  });
+  }, { onConflict: 'user_id' });
   if (error) {
     console.error('saveSettings error:', error);
     // Areas are already in localStorage — user won't lose data, but flag it
