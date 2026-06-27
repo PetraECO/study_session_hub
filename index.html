@@ -2,479 +2,3027 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pebbl — Focus for the rest of us</title>
-  <meta name="description" content="A gentle focus tracker built for scattered minds. Not hustle culture. Just the first pebble.">
-  <meta property="og:title" content="Pebbl — Focus for the rest of us">
-  <meta property="og:description" content="A gentle focus tracker built for scattered minds. Not hustle culture. Just the first pebble.">
-  <meta property="og:image" content="./icon-512.png">
-  <meta name="theme-color" content="#0d0d1f">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pebbl</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#12121e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pebbl">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --primary:#667eea;--primary-dark:#5a67d8;--secondary:#764ba2;
+      --bg-light:#1a1a2e;--bg-dark:#0d0d1f;
+      --work:#6b9cc4;--study:#9b84c8;--creative:#c8788a;
+    }
+    body{
+      font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+      background:#0d0d1f;
+      min-height:100vh;padding:16px 20px 24px;color:#e2e8f0;transition:background .3s,color .3s
+    }
+    .container{max-width:960px;margin:0 auto}
+    .brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:32px;margin-bottom:22px}
+    h1{color:#fff;margin:0;font-size:2em;font-weight:800;letter-spacing:-.5px}
 
-    :root {
-      --primary: #667eea;
-      --secondary: #764ba2;
-      --bg: #0d0d1f;
-      --bg2: #12121e;
-      --text: #e2e8f0;
-      --muted: rgba(255,255,255,.45);
-      --border: rgba(255,255,255,.08);
+    /* ── TABS ── */
+    .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;transition:opacity .4s ease}
+    .tabs.focus-mode{opacity:.08;pointer-events:none}
+    .tab{
+      padding:10px 22px;background:rgba(255,255,255,.08);border:none;
+      color:rgba(255,255,255,.55);cursor:pointer;border-radius:8px;font-weight:600;
+      font-family:inherit;font-size:.9em;transition:all .2s;
+      position:relative
     }
+    .tab:hover{background:rgba(255,255,255,.14);color:#fff}
+    .tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(102,126,234,.38)}
 
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      overflow-x: hidden;
+    /* ── TAB TOOLTIPS ── */
+    .tab[data-tip]::after{
+      content:attr(data-tip);
+      position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+      background:rgba(15,15,35,.96);color:rgba(255,255,255,.9);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:.75em;font-weight:500;line-height:1.4;
+      padding:7px 11px;border-radius:8px;white-space:nowrap;
+      pointer-events:none;opacity:0;transition:opacity .18s ease, transform .18s ease;
+      transform:translateX(-50%) translateY(4px);
+      box-shadow:0 4px 16px rgba(0,0,0,.4);
+      z-index:100
     }
-
-    /* ── NAV ── */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 40px;
-      background: rgba(13,13,31,.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-logo span { font-size: 1.2em; font-weight: 800; color: #fff; letter-spacing: -.3px; }
-    .nav-cta {
-      padding: 10px 22px; border: none; border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: #fff; font-family: inherit; font-size: .9em; font-weight: 700;
-      cursor: pointer; text-decoration: none; transition: all .2s;
-      box-shadow: 0 4px 16px rgba(102,126,234,.35);
-    }
-    .nav-cta:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center;
-      padding: 120px 24px 80px;
-      position: relative; overflow: hidden;
-    }
-    /* ambient ripple rings */
-    .hero-rings {
-      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
-    }
-    .ring {
-      position: absolute; left: 50%; top: 50%; border-radius: 50%;
-      border: 1px solid rgba(102,126,234,.1);
-      transform: translate(-50%, -50%);
-      animation: ringPulse 6s ease-out infinite;
-    }
-    .ring:nth-child(1) { width: 300px; height: 300px; animation-delay: 0s; }
-    .ring:nth-child(2) { width: 550px; height: 550px; animation-delay: 1.5s; }
-    .ring:nth-child(3) { width: 800px; height: 800px; animation-delay: 3s; }
-    .ring:nth-child(4) { width: 1100px; height: 1100px; animation-delay: 4.5s; }
-    @keyframes ringPulse {
-      0%   { opacity: .6; }
-      100% { opacity: 0; }
-    }
-    @keyframes floatPebbl {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-10px); }
+    .tab[data-tip]:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+    body.light-mode .tab[data-tip]::after{
+      background:rgba(30,30,50,.95);border-color:rgba(0,0,0,.15)
     }
 
-    .hero-pebbl {
-      margin-bottom: 32px;
-      animation: floatPebbl 3.5s ease-in-out infinite;
+    /* ── TAB CONTENT ── */
+    .tab-content{display:none;padding:0}
+    .tab-content.active{display:block}
+    .tab-content h2{color:#fff;margin-bottom:22px;font-size:1.5em;font-weight:700}
+    #home.tab-content,#timer.tab-content{background:transparent}
+    #progress.tab-content,#history.tab-content,#settings.tab-content{
+      background:rgba(255,255,255,.05);padding:28px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.1)
     }
 
-    .hero-label {
-      display: inline-block;
-      font-size: .75em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
-      color: var(--primary);
-      border: 1px solid rgba(102,126,234,.3);
-      border-radius: 999px; padding: 5px 14px; margin-bottom: 28px;
+    /* ══ HOME SCREEN ══ */
+
+    /* Daily stats bar */
+    .daily-stats{
+      display:flex;gap:0;margin-bottom:28px;
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(102,126,234,.35)
+    }
+    .stat-pill{
+      flex:1;padding:18px 12px;text-align:center;
+      border-right:1px solid rgba(255,255,255,.15)
+    }
+    .stat-pill:last-child{border-right:none}
+    .stat-pill-val{font-size:1.6em;font-weight:800;color:#fff;line-height:1}
+    .stat-pill-lbl{font-size:.72em;color:rgba(255,255,255,.75);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .stat-date{
+      text-align:right;padding:10px 18px 0;
+      font-size:.8em;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:.3px
     }
 
-    .hero h1 {
-      font-size: clamp(2.4em, 6vw, 4em);
-      font-weight: 800; color: #fff;
-      line-height: 1.15; letter-spacing: -.5px;
-      max-width: 700px; margin: 0 auto 20px;
+    /* Area cards */
+    /* ══ HERO AREA CAROUSEL ══ */
+    .area-carousel{position:relative;margin-bottom:24px}
+    .area-hero{
+      border-radius:22px;padding:36px 32px 32px;
+      position:relative;overflow:hidden;cursor:pointer;
+      transition:transform .2s ease;
+      min-height:220px;display:flex;flex-direction:column;justify-content:space-between
     }
-    .hero h1 em {
-      font-style: normal;
-      background: linear-gradient(135deg, var(--primary), #a78bfa);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    .area-hero:active{transform:scale(.99)}
+    /* coloured gradient bg from area colour */
+    .area-hero::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
+      opacity:1;z-index:0
+    }
+    /* glass sheen */
+    .area-hero::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 55%);
+      pointer-events:none;z-index:1
+    }
+    .area-hero-inner{position:relative;z-index:2}
+    .area-hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+    .area-hero-icon{
+      width:52px;height:52px;border-radius:14px;
+      background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);
+      display:flex;align-items:center;justify-content:center
+    }
+    .area-hero-name{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.75);margin-bottom:4px}
+    .area-hero-hours{font-size:3em;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px}
+    .area-hero-goal{font-size:.85em;color:rgba(255,255,255,.65);margin-top:4px;font-weight:500}
+    .area-hero-bar-wrap{height:4px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;margin:16px 0 6px}
+    .area-hero-bar-fill{height:100%;border-radius:4px;background:rgba(255,255,255,.9);transition:width .6s ease}
+    .area-hero-pct{font-size:.75em;font-weight:600;color:rgba(255,255,255,.65)}
+    .area-hero-start{
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      margin-top:22px;padding:15px;border-radius:13px;
+      font-size:.95em;font-weight:800;color:#fff;
+      background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);
+      transition:all .2s
+    }
+    .area-hero:hover .area-hero-start{background:rgba(255,255,255,.3);border-color:rgba(255,255,255,.5)}
+    /* nav */
+    .area-carousel-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px}
+    .carousel-btn{
+      width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);
+      font-size:1.1em;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .2s;font-family:inherit
+    }
+    .carousel-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+    .carousel-dots{display:flex;gap:6px;align-items:center}
+    .carousel-dot{
+      width:6px;height:6px;border-radius:50%;
+      background:rgba(255,255,255,.25);transition:all .25s
+    }
+    .carousel-dot.active{background:#fff;width:20px;border-radius:3px}
+
+    /* ══ SESSION START MODAL ══ */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;justify-content:center;align-items:flex-end}
+    .modal.active{display:flex}
+    .modal-sheet{
+      background:#1a1a35;border-radius:20px 20px 0 0;width:100%;max-width:540px;
+      margin:0 auto;padding:32px 28px 36px;
+      animation:slideUp .3s cubic-bezier(.34,1.3,.64,1)
+    }
+    @keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .modal-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 24px}
+    .modal-area-header{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+    .modal-area-icon{font-size:1.8em}
+    .modal-area-name{font-size:1.3em;font-weight:800;color:#fff}
+    .form-group{margin-bottom:16px}
+    .form-group label{display:block;font-size:.85em;font-weight:700;color:rgba(255,255,255,.55);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+    .form-group input,.form-group textarea,.form-group select{
+      width:100%;padding:11px 14px;border:2px solid rgba(255,255,255,.15);border-radius:10px;
+      font-size:1em;font-family:inherit;transition:border-color .2s;
+      background:rgba(255,255,255,.08);color:#fff
+    }
+    .form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);background:rgba(255,255,255,.12)}
+    .form-group textarea{min-height:72px;resize:vertical}
+    .duration-row{display:flex;gap:8px}
+    .duration-opt{
+      flex:1;padding:10px 4px;border:2px solid rgba(255,255,255,.15);border-radius:8px;
+      text-align:center;cursor:pointer;font-weight:600;font-size:.9em;
+      font-family:inherit;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);transition:all .2s
+    }
+    .duration-opt.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn-start{
+      width:100%;padding:15px;border:none;border-radius:12px;
+      font-size:1.05em;font-weight:800;font-family:inherit;cursor:pointer;
+      color:#fff;margin-top:20px;transition:all .2s
+    }
+    .btn-start:hover{transform:translateY(-2px);filter:brightness(1.07)}
+    .btn-cancel{
+      width:100%;padding:11px;border:none;border-radius:10px;
+      background:none;color:#a0aec0;font-family:inherit;font-size:.9em;
+      font-weight:600;cursor:pointer;margin-top:8px;transition:color .2s
+    }
+    .btn-cancel:hover{color:#718096}
+
+    /* ══ TIMER ══ */
+    .timer-container{
+      text-align:center;padding:48px 30px 36px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:24px;margin-bottom:30px;
+      position:relative;overflow:hidden
+    }
+    .timer-container::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse 60% 50% at 50% 40%, var(--ring-glow-bg,rgba(102,126,234,.14)) 0%, transparent 70%);
+      pointer-events:none;transition:background .8s
+    }
+    .timer-session-label{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,.1);border-radius:20px;padding:7px 18px;
+      font-size:.88em;font-weight:700;color:#fff;margin-bottom:16px;letter-spacing:.3px;
+      border:1px solid rgba(255,255,255,.18)
+    }
+    .timer-task-label{font-size:.95em;color:rgba(255,255,255,.6);margin-bottom:24px;font-weight:500}
+    .timer-ring-wrapper{position:relative;width:310px;height:310px;margin:0 auto 28px}
+    .timer-svg{width:100%;height:100%;transform:rotate(-90deg)}
+    .ring-track{fill:none;stroke:rgba(255,255,255,.1);stroke-width:10}
+    .ring-progress{
+      fill:none;stroke:#4ade80;stroke-width:10;
+      stroke-dasharray:753.98;stroke-dashoffset:0;
+      stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .6s,filter .6s
+    }
+    .timer-inner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:230px;text-align:center}
+    .timer-display{
+      font-size:5em;font-weight:800;color:#fff;
+      font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+      font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-3px
+    }
+    .timer-phase{font-size:.88em;color:rgba(255,255,255,.55);margin-top:10px;font-weight:600;letter-spacing:.3px}
+    .timer-options{display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
+    .timer-option{
+      padding:8px 20px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);
+      border:1px solid rgba(255,255,255,.18);border-radius:8px;cursor:pointer;
+      font-weight:600;font-family:inherit;transition:all .2s
+    }
+    .timer-option:hover{background:rgba(255,255,255,.16);color:#fff}
+    .timer-option.active{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.45)}
+    .timer-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn-white{
+      padding:13px 36px;font-size:1em;border:none;border-radius:12px;cursor:pointer;
+      font-weight:700;font-family:inherit;background:#fff;color:var(--primary);
+      box-shadow:0 4px 20px rgba(0,0,0,.25);transition:all .2s
+    }
+    .btn-white:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.3)}
+    .btn-ghost{
+      padding:13px 24px;font-size:1em;border:1px solid rgba(255,255,255,.25);border-radius:12px;
+      cursor:pointer;font-weight:600;font-family:inherit;background:rgba(255,255,255,.06);color:#fff;transition:all .2s
+    }
+    .btn-ghost:hover{background:rgba(255,255,255,.14)}
+    .btn-end-session{
+      padding:13px 24px;font-size:1em;border:1px solid rgba(248,113,113,.45);border-radius:12px;
+      cursor:pointer;font-weight:700;font-family:inherit;background:rgba(248,113,113,.12);color:#fca5a5;
+      transition:all .2s;display:none
+    }
+    .btn-end-session:hover{background:rgba(248,113,113,.25);border-color:rgba(248,113,113,.7);color:#fff}
+
+    /* ── PULSING TIMER TAB ── */
+    .tab.session-active{
+      background:#16a34a !important;color:#fff !important;
+      animation:tabPulse 2s ease-in-out infinite
+    }
+    @keyframes tabPulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.7)}
+      50%{box-shadow:0 0 0 10px rgba(34,197,94,0)}
     }
 
-    .hero-sub {
-      font-size: clamp(1em, 2.5vw, 1.2em);
-      color: var(--muted); max-width: 520px; margin: 0 auto 48px;
-      line-height: 1.7;
+    /* ── SESSION ACTIVE FLOATING BAR ── */
+    .session-bar{
+      position:fixed;top:0;left:0;right:0;z-index:900;
+      background:linear-gradient(90deg,#15803d,#16a34a);
+      display:none;align-items:center;justify-content:space-between;gap:12px;
+      padding:10px 20px;
+      box-shadow:0 2px 16px rgba(0,0,0,.3)
+    }
+    .session-bar.visible{display:flex}
+    .session-bar-dot{
+      width:8px;height:8px;border-radius:50%;background:#fff;flex-shrink:0;
+      animation:dotPulse 1.2s ease-in-out infinite
+    }
+    @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .session-bar-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+    .session-bar-area{font-size:.85em;font-weight:700;color:rgba(255,255,255,.85);white-space:nowrap}
+    .session-bar-time{
+      font-size:1em;font-weight:800;color:#fff;
+      font-variant-numeric:tabular-nums;letter-spacing:.5px
+    }
+    .session-bar-btn{
+      flex-shrink:0;padding:6px 14px;background:rgba(255,255,255,.2);
+      border:1.5px solid rgba(255,255,255,.4);border-radius:8px;
+      color:#fff;font-family:inherit;font-size:.82em;font-weight:700;
+      cursor:pointer;white-space:nowrap;transition:all .2s
+    }
+    .session-bar-btn:hover{background:rgba(255,255,255,.35)}
+    .sound-toggle{
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      color:rgba(255,255,255,.45);cursor:pointer;margin-top:18px;font-size:.85em
+    }
+    .sound-toggle input{width:auto;cursor:pointer;accent-color:var(--primary)}
+    .no-session-msg{
+      text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);
+      font-size:1em;font-weight:500
+    }
+    .no-session-msg .go-home{
+      display:inline-block;margin-top:14px;padding:10px 24px;
+      background:var(--primary);color:#fff;border:none;border-radius:8px;
+      cursor:pointer;font-family:inherit;font-weight:700;font-size:.9em
     }
 
-    .hero-actions { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    .btn-primary {
-      display: inline-block; padding: 18px 48px; border: none; border-radius: 16px;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: #fff; font-family: inherit; font-size: 1.1em; font-weight: 800;
-      text-decoration: none; cursor: pointer; transition: all .22s;
-      box-shadow: 0 8px 32px rgba(102,126,234,.45); letter-spacing: -.2px;
+    /* ══ PROGRESS ══ */
+    .progress-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    @media(max-width:700px){.progress-layout{grid-template-columns:1fr}}
+    .progress-column{background:rgba(255,255,255,.05);padding:22px;border-radius:14px;border:1px solid rgba(255,255,255,.1)}
+    .progress-column h3{margin-bottom:18px;color:#fff;font-weight:700}
+    .progress-bars{display:grid;gap:14px}
+    .progress-item{background:rgba(255,255,255,.06);padding:14px 16px;border-radius:10px;border-left:4px solid #667eea}
+    .progress-header{display:flex;justify-content:space-between;margin-bottom:8px;font-weight:700;color:#e2e8f0;font-size:.9em}
+    .progress-bar{height:18px;background:rgba(255,255,255,.1);border-radius:9px;overflow:hidden}
+    .progress-fill{
+      height:100%;background:var(--primary);
+      transition:width .4s;display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:.76em;font-weight:700
     }
-    .btn-primary:hover { filter: brightness(1.08); transform: translateY(-2px); }
-    .hero-note { font-size: .8em; color: rgba(255,255,255,.28); font-weight: 500; }
+    .chart-container{
+      display:flex;align-items:flex-end;justify-content:space-around;
+      height:220px;padding:14px 8px 36px;background:rgba(255,255,255,.05);border-radius:10px;
+      border:1px solid rgba(255,255,255,.1);gap:12px
+    }
+    .chart-bar{
+      flex:1;max-width:80px;
+      border-radius:6px 6px 0 0;position:relative;cursor:default;
+      transition:opacity .2s
+    }
+    .chart-bar-label{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);font-size:.8em;color:rgba(255,255,255,.5);white-space:nowrap;font-weight:700}
+    .chart-bar-value{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:.78em;color:#e2e8f0;font-weight:700;white-space:nowrap}
 
-    /* ── APP PREVIEW ── */
-    .preview-section {
-      padding: 0 24px 100px;
-      display: flex; justify-content: center;
+    /* ══ HISTORY ══ */
+    .session-log{margin-top:4px}
+    .log-accordion{margin-bottom:8px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.07)}
+    .log-accordion-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:13px 16px;cursor:pointer;
+      background:rgba(255,255,255,.05);transition:background .2s;user-select:none
     }
-    .app-frame {
-      width: 100%; max-width: 380px;
-      background: #12121e;
-      border-radius: 36px;
-      border: 1px solid rgba(255,255,255,.1);
-      box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
-      overflow: hidden;
-      position: relative;
-    }
-    .app-frame-notch {
-      height: 32px; background: #0a0a18;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .app-frame-notch-pill {
-      width: 80px; height: 10px; background: #1a1a2e; border-radius: 999px;
-    }
-    .app-screen { padding: 20px; }
-    /* mini app UI inside frame */
-    .mini-tabs {
-      display: flex; gap: 4px; margin-bottom: 20px;
-    }
-    .mini-tab {
-      flex: 1; padding: 8px 4px; border-radius: 8px;
-      background: rgba(255,255,255,.06); text-align: center;
-      font-size: .7em; font-weight: 700; color: rgba(255,255,255,.4);
-    }
-    .mini-tab.active {
-      background: var(--primary); color: #fff;
-    }
-    .mini-greeting { font-size: .95em; font-weight: 800; color: #fff; margin-bottom: 4px; }
-    .mini-nudge { font-size: .7em; color: rgba(255,255,255,.45); margin-bottom: 18px; line-height: 1.4; }
-    .mini-btn {
-      width: 100%; padding: 14px;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      border-radius: 12px; text-align: center;
-      font-size: .85em; font-weight: 800; color: #fff; margin-bottom: 6px;
-    }
-    .mini-hint { text-align: center; font-size: .62em; color: rgba(255,255,255,.28); margin-bottom: 18px; }
-    .mini-divider {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-      font-size: .6em; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .8px; color: rgba(255,255,255,.2);
-    }
-    .mini-divider::before, .mini-divider::after {
-      content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.07);
-    }
-    .mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .mini-card {
-      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07);
-      border-radius: 10px; padding: 12px 8px; text-align: center;
-    }
-    .mini-card-icon { font-size: 1.4em; display: block; margin-bottom: 4px; }
-    .mini-card-name { font-size: .62em; font-weight: 700; color: rgba(255,255,255,.7); display: block; margin-bottom: 8px; }
-    .mini-bar-wrap { width: 100%; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; margin-bottom: 4px; }
-    .mini-bar { height: 100%; border-radius: 2px; }
-    .mini-bar-text { font-size: .55em; color: rgba(255,255,255,.3); }
+    .log-accordion-header:hover{background:rgba(255,255,255,.09)}
+    .log-accordion-date{font-size:.87em;font-weight:700;color:#fff}
+    .log-accordion-meta{display:flex;align-items:center;gap:12px;font-size:.76em;color:rgba(255,255,255,.4)}
+    .log-accordion-arrow{transition:transform .25s ease;display:inline-block;font-size:.7em;color:rgba(255,255,255,.3)}
+    .log-accordion.open .log-accordion-arrow{transform:rotate(180deg)}
+    .log-accordion-body{display:none}
+    .log-accordion.open .log-accordion-body{display:block}
+    .log-entry{background:rgba(255,255,255,.03);padding:14px 16px;border-left:4px solid var(--primary);border-bottom:1px solid rgba(255,255,255,.04)}
+    .log-entry:last-child{border-bottom:none}
+    .log-header{display:flex;justify-content:space-between;margin-bottom:5px;font-weight:700;color:#e2e8f0;font-size:.9em}
+    .log-task{color:rgba(255,255,255,.65);font-size:.9em;margin-bottom:4px;font-weight:500}
+    .log-notes{color:rgba(255,255,255,.45);font-size:.88em}
+    .log-empty{text-align:center;padding:40px 0;color:rgba(255,255,255,.35);font-weight:500}
 
-    /* ── SECTIONS ── */
-    section { padding: 100px 24px; }
-    .section-inner { max-width: 900px; margin: 0 auto; }
-    .section-label {
-      font-size: .72em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--primary); margin-bottom: 16px;
+    /* ══ SETTINGS ══ */
+    .settings-section{background:rgba(255,255,255,.05);padding:24px;border-radius:14px;border:1px solid rgba(255,255,255,.1);margin-bottom:20px}
+    .settings-section h3{margin-bottom:14px;font-weight:700;color:#fff}
+    .settings-section p{color:rgba(255,255,255,.5);font-size:.88em;margin-bottom:16px}
+    .color-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px}
+    .color-option{
+      padding:18px 8px;border-radius:10px;cursor:pointer;border:3px solid transparent;
+      transition:all .25s;text-align:center;font-size:.82em;font-weight:700;color:#fff
     }
-    .section-title {
-      font-size: clamp(1.8em, 4vw, 2.6em);
-      font-weight: 800; color: #fff; line-height: 1.2;
-      letter-spacing: -.3px; margin-bottom: 20px;
+    .color-option:hover{transform:scale(1.06)}
+    .color-option.active{border-color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+    .goal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    @media(max-width:600px){.goal-grid{grid-template-columns:1fr}}
+    .goal-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;border-top:4px solid var(--accent)}
+    .goal-card-name{font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+    .goal-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.85em}
+    .goal-row label{flex:1;color:rgba(255,255,255,.55);font-weight:600}
+    .goal-row input{width:70px;padding:6px 8px;border:2px solid rgba(255,255,255,.15);border-radius:6px;font-family:inherit;font-size:.9em;text-align:right;background:rgba(255,255,255,.08);color:#fff}
+    .goal-row input:focus{outline:none;border-color:var(--primary)}
+    .btn-save-goals{
+      padding:10px 22px;background:var(--primary);color:#fff;border:none;
+      border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.9em;
+      margin-top:4px;transition:all .2s
     }
-    .section-body {
-      font-size: 1.05em; color: var(--muted); line-height: 1.75; max-width: 580px;
+    .btn-save-goals:hover{background:var(--primary-dark)}
+    .area-edit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    @media(max-width:600px){.area-edit-grid{grid-template-columns:1fr}}
+    .area-edit-card{
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+      border-radius:12px;padding:16px;border-top:4px solid #667eea;
+      cursor:grab;transition:transform .15s,box-shadow .15s,background .15s
+    }
+    .area-edit-card:active{cursor:grabbing}
+    .area-edit-card.drag-over{
+      background:rgba(102,126,234,.18);border-color:rgba(102,126,234,.5);
+      transform:scale(1.03);box-shadow:0 0 0 2px var(--primary)
+    }
+    .area-edit-card.dragging{opacity:.4}
+    .drag-handle{
+      text-align:center;color:rgba(255,255,255,.2);font-size:.75em;
+      margin-bottom:8px;user-select:none;letter-spacing:2px
     }
 
-    /* ── FOR WHOM ── */
-    .for-section { background: var(--bg2); }
-    .for-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px; margin-top: 48px;
+    /* ── EXPORT BUTTON ── */
+    .btn-export{
+      padding:9px 18px;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.2);border-radius:9px;
+      color:rgba(255,255,255,.8);font-family:inherit;font-size:.85em;
+      font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap
     }
-    .for-card {
-      background: rgba(255,255,255,.04); border: 1px solid var(--border);
-      border-radius: 18px; padding: 28px 24px;
+    .btn-export:hover{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.4)}
+    body.light-mode .btn-export{
+      background:#f4f4f5;border-color:#d4d4d8;color:#52525b
     }
-    .for-card-icon { font-size: 2em; margin-bottom: 14px; display: block; }
-    .for-card-title { font-size: 1.05em; font-weight: 800; color: #fff; margin-bottom: 8px; }
-    .for-card-body { font-size: .88em; color: var(--muted); line-height: 1.6; }
+    body.light-mode .btn-export:hover{background:#e4e4e7;color:#18181b}
 
-    /* ── HOW IT WORKS ── */
-    .steps { display: flex; flex-direction: column; gap: 40px; margin-top: 48px; }
-    .step { display: flex; gap: 24px; align-items: flex-start; }
-    .step-num {
-      flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      display: flex; align-items: center; justify-content: center;
-      font-size: .85em; font-weight: 800; color: #fff;
-      box-shadow: 0 4px 16px rgba(102,126,234,.35);
+    /* ── FOCUS TAB ── */
+    /* ── Focus hero ── */
+    .focus-hero{text-align:center;padding:28px 4px 32px;margin-bottom:20px}
+    .focus-greeting{font-size:1.4em;font-weight:800;color:#fff;margin-bottom:8px}
+    .focus-nudge{font-size:.98em;font-weight:500;color:rgba(255,255,255,.55);margin-bottom:26px;min-height:1.4em;transition:opacity .5s ease;line-height:1.5}
+    .focus-letrip-btn{
+      width:100%;padding:20px;border:none;border-radius:16px;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff;font-family:inherit;font-size:1.2em;font-weight:800;
+      cursor:pointer;transition:all .22s;letter-spacing:-.2px;
+      box-shadow:0 8px 32px rgba(102,126,234,.45)
     }
-    .step-text h3 { font-size: 1.05em; font-weight: 800; color: #fff; margin-bottom: 6px; }
-    .step-text p { font-size: .9em; color: var(--muted); line-height: 1.6; }
+    .focus-letrip-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}
+    .focus-letrip-btn:active{transform:scale(.98)}
+    .focus-letrip-hint{margin-top:10px;font-size:.78em;color:rgba(255,255,255,.3);font-weight:500;min-height:1.1em}
+    .focus-area-divider{
+      display:flex;align-items:center;gap:12px;margin-bottom:16px;
+      font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:rgba(255,255,255,.22)
+    }
+    .focus-area-divider::before,.focus-area-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+    .focus-last-session{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;font-size:.82em;color:rgba(255,255,255,.5);margin-bottom:20px}
+    .focus-last-session strong{color:rgba(255,255,255,.8);font-weight:600}
+    .focus-first-use{
+      display:flex;align-items:flex-start;gap:12px;padding:16px 18px;margin-bottom:20px;
+      background:linear-gradient(135deg,rgba(102,126,234,.1),rgba(118,75,162,.1));
+      border:1.5px solid rgba(102,126,234,.22);border-radius:14px;text-align:left
+    }
+    .focus-first-use-icon{font-size:1.6em;flex-shrink:0;margin-top:1px}
+    .focus-first-use-text{font-size:.88em;color:rgba(255,255,255,.65);line-height:1.55;font-weight:500}
+    .focus-first-use-text strong{color:rgba(255,255,255,.9);font-weight:700}
+    body.light-mode .focus-first-use{background:rgba(102,126,234,.07);border-color:rgba(102,126,234,.2)}
+    body.light-mode .focus-first-use-text{color:rgba(0,0,0,.55)}
+    body.light-mode .focus-first-use-text strong{color:rgba(0,0,0,.8)}
+    .focus-area-label{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);margin-bottom:12px}
+    .focus-area-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px}
+    .focus-area-card:last-child:nth-child(odd){grid-column:1/-1}
+    .focus-area-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 14px 16px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.07);border-radius:16px;cursor:pointer;transition:all .2s;user-select:none}
+    .focus-area-card:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18);transform:translateY(-2px)}
+    .focus-area-card.selected{border-color:var(--primary);background:rgba(102,126,234,.18);box-shadow:0 0 0 1px var(--primary)}
+    .focus-area-card-icon{font-size:2.4em}
+    .focus-area-card-name{font-size:.85em;font-weight:700;color:rgba(255,255,255,.8)}
+    .focus-area-progress-wrap{width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:2px}
+    .focus-area-progress-fill{height:100%;border-radius:2px;transition:width .4s ease}
+    .focus-area-progress-text{font-size:.68em;color:rgba(255,255,255,.35);font-weight:600}
+    .focus-duration{justify-content:center;margin-bottom:16px}
+    .focus-start-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:14px;color:#fff;font-family:inherit;font-size:1.05em;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.2px;margin-top:4px}
+    .focus-start-btn:hover{opacity:.9;transform:translateY(-1px)}
+    body.light-mode .focus-greeting{color:#18181b}
+    body.light-mode .focus-nudge{color:rgba(0,0,0,.45)}
+    body.light-mode .focus-last-session{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);color:rgba(0,0,0,.45)}
+    body.light-mode .focus-last-session strong{color:rgba(0,0,0,.75)}
+    body.light-mode .focus-letrip-hint{color:rgba(0,0,0,.3)}
+    body.light-mode .focus-area-divider{color:rgba(0,0,0,.22)}
+    body.light-mode .focus-area-divider::before,body.light-mode .focus-area-divider::after{background:rgba(0,0,0,.08)}
+    body.light-mode .focus-area-label{color:rgba(0,0,0,.35)}
+    body.light-mode .focus-area-card{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
+    body.light-mode .focus-area-card:hover{background:rgba(0,0,0,.07);border-color:rgba(0,0,0,.15)}
+    body.light-mode .focus-area-card-name{color:rgba(0,0,0,.75)}
+    body.light-mode .focus-area-progress-wrap{background:rgba(0,0,0,.08)}
+    body.light-mode .focus-area-progress-text{color:rgba(0,0,0,.35)}
 
-    /* ── BUILT IN PUBLIC ── */
-    .bip-section {
-      background: linear-gradient(135deg, rgba(102,126,234,.08), rgba(118,75,162,.08));
-      border-top: 1px solid rgba(102,126,234,.15);
-      border-bottom: 1px solid rgba(102,126,234,.15);
-    }
-    .bip-inner {
-      max-width: 600px; margin: 0 auto; text-align: center;
-    }
-    .bip-icon { font-size: 2.5em; margin-bottom: 20px; display: block; }
-    .bip-title { font-size: 1.6em; font-weight: 800; color: #fff; margin-bottom: 14px; }
-    .bip-body { font-size: .98em; color: var(--muted); line-height: 1.75; }
-    .bip-link {
-      display: inline-block; margin-top: 24px;
-      color: var(--primary); font-weight: 700; text-decoration: none; font-size: .9em;
-      border-bottom: 1px solid rgba(102,126,234,.3); padding-bottom: 2px;
-      transition: border-color .2s;
-    }
-    .bip-link:hover { border-color: var(--primary); }
+    /* ── RIPPLES TAB ── */
+    .ripples-stats-row{display:flex;gap:10px;margin-bottom:26px}
+    .ripple-stat{flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:14px 10px;text-align:center}
+    .ripple-stat-val{font-size:1.35em;font-weight:800;color:#fff}
+    .ripple-stat-lbl{font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-top:2px}
+    .ripples-section{margin-bottom:28px}
+    .ripples-section-title{font-size:.75em;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.4);margin-bottom:14px}
+    body.light-mode .ripple-stat{background:rgba(0,0,0,.04)}
+    body.light-mode .ripple-stat-val{color:#18181b}
+    body.light-mode .ripple-stat-lbl{color:rgba(0,0,0,.4)}
+    body.light-mode .ripples-section-title{color:rgba(0,0,0,.35)}
 
-    /* ── FINAL CTA ── */
-    .cta-section { text-align: center; padding: 120px 24px; }
-    .cta-title {
-      font-size: clamp(2em, 5vw, 3.2em);
-      font-weight: 800; color: #fff; line-height: 1.2;
-      letter-spacing: -.4px; margin-bottom: 16px; max-width: 600px; margin: 0 auto 16px;
+    .area-edit-icon-preview{font-size:1.6em;text-align:center;margin-bottom:10px}
+    /* ── EMOJI PICKER ── */
+    .emoji-picker-overlay{position:fixed;inset:0;z-index:9000;display:flex;align-items:flex-end;background:rgba(0,0,0,.55);animation:fadeInBg .18s ease}
+    @keyframes fadeInBg{from{opacity:0}to{opacity:1}}
+    .emoji-picker-sheet{
+      background:#1a1a2e;border-radius:22px 22px 0 0;padding:20px 16px 32px;
+      width:100%;max-height:62vh;overflow-y:auto;
+      animation:slideUpSheet .22s cubic-bezier(.34,1.2,.64,1)
     }
-    .cta-sub { font-size: 1em; color: var(--muted); margin-bottom: 40px; }
-    .cta-small { margin-top: 16px; font-size: .8em; color: rgba(255,255,255,.25); }
+    @keyframes slideUpSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .emoji-picker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 4px}
+    .emoji-picker-title{font-weight:800;font-size:.95em;color:#fff}
+    .emoji-picker-close{background:rgba(255,255,255,.1);border:none;border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,.6);font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+    .emoji-picker-close:hover{background:rgba(255,255,255,.2)}
+    .emoji-picker-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+    @media(max-width:380px){.emoji-picker-grid{grid-template-columns:repeat(6,1fr)}}
+    .emoji-picker-cell{font-size:1.45em;text-align:center;padding:7px 4px;border-radius:10px;cursor:pointer;transition:background .12s;border:none;background:none;line-height:1}
+    .emoji-picker-cell:hover{background:rgba(255,255,255,.12)}
+    .emoji-picker-cell.ep-selected{background:rgba(102,126,234,.4);outline:2px solid var(--primary)}
+    .emoji-cat-label{grid-column:1/-1;font-size:.6em;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:rgba(255,255,255,.28);padding:10px 2px 4px}
+    .emoji-picker-btn{
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+      border-radius:10px;font-size:1.45em;padding:5px 12px;cursor:pointer;
+      transition:background .15s,transform .1s;line-height:1;display:inline-flex;
+      align-items:center;gap:6px
+    }
+    .emoji-picker-btn:hover{background:rgba(255,255,255,.16);transform:scale(1.06)}
+    .emoji-picker-btn .ep-edit{font-size:.45em;opacity:.5;font-style:normal}
+    input[type="color"]{width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:2px solid rgba(255,255,255,.2);background:none}
+    .btn-danger{
+      padding:10px 18px;background:#f56565;color:#fff;border:none;border-radius:8px;
+      cursor:pointer;font-family:inherit;font-weight:700;font-size:.9em
+    }
 
-    /* ── FOOTER ── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 32px 40px;
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: .82em; color: rgba(255,255,255,.25);
+    /* ══ HOME CARD (welcome + recent sessions) ══ */
+    .home-card{
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 4px 32px rgba(102,126,234,.15), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+      border-radius:16px;padding:22px 24px 18px;margin-bottom:20px
     }
-    footer a { color: rgba(255,255,255,.35); text-decoration: none; }
-    footer a:hover { color: rgba(255,255,255,.6); }
+    .home-card-title{font-size:1em;font-weight:800;color:#fff;margin-bottom:4px}
+    .home-card-desc{color:rgba(255,255,255,.6);font-size:.88em;line-height:1.55;margin-bottom:0}
+    .home-card-nudge{
+      margin-top:10px;padding:8px 12px;border-radius:8px;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+      font-size:.83em;color:rgba(255,255,255,.65);font-weight:500
+    }
+    .quick-start-banner{
+      background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);
+      border-radius:16px;padding:22px 24px;margin-bottom:20px;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      box-shadow:0 6px 28px rgba(102,126,234,.45);
+      cursor:pointer;transition:all .25s;position:relative;overflow:hidden
+    }
+    .quick-start-banner::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 60%);
+      pointer-events:none
+    }
+    .quick-start-banner:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(102,126,234,.55)}
+    .quick-start-banner:active{transform:translateY(0)}
+    .quick-start-text{flex:1}
+    .quick-start-label{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);margin-bottom:4px}
+    .quick-start-heading{font-size:1.15em;font-weight:800;color:#fff;line-height:1.2}
+    .quick-start-area{font-size:.82em;color:rgba(255,255,255,.65);margin-top:3px}
+    .quick-start-cta{
+      flex-shrink:0;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);
+      border-radius:12px;padding:12px 20px;color:#fff;font-family:inherit;
+      font-size:.95em;font-weight:800;white-space:nowrap;transition:all .2s
+    }
+    .quick-start-banner:hover .quick-start-cta{background:rgba(255,255,255,.3)}
+    .recent-header{font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.38);margin:18px 0 10px}
+    .recent-entry{
+      display:flex;align-items:center;gap:12px;
+      padding:10px 14px;border-radius:10px;border-left:3px solid;
+      margin-bottom:8px;background:rgba(255,255,255,.06)
+    }
+    .recent-area{font-size:.83em;font-weight:700;color:#fff;min-width:85px;white-space:nowrap}
+    .recent-task{flex:1;font-size:.83em;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .recent-meta{font-size:.78em;color:rgba(255,255,255,.38);font-weight:600;white-space:nowrap}
 
-    /* ── RESPONSIVE ── */
-    @media (max-width: 600px) {
-      nav { padding: 16px 20px; }
-      section { padding: 72px 20px; }
-      footer { flex-direction: column; gap: 12px; text-align: center; }
+    /* ══ AREA RESET ══ */
+    .area-reset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    @media(max-width:600px){.area-reset-grid{grid-template-columns:1fr}}
+    .btn-area-reset{
+      padding:9px 10px;background:transparent;border:2px solid;
+      border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;
+      font-size:.82em;transition:opacity .2s
     }
+    .btn-area-reset:hover{opacity:.65}
+
+    /* ══ SETTINGS TOAST ══ */
+    .settings-toast{
+      position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(100px);
+      background:rgba(22,22,42,.96);border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      border-radius:14px;padding:16px 20px;
+      display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+      z-index:3000;min-width:300px;max-width:90vw;
+      transition:transform .35s cubic-bezier(.34,1.3,.64,1), opacity .3s;
+      opacity:0;pointer-events:none
+    }
+    .settings-toast.visible{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:all}
+    .toast-msg{flex:1;font-size:.9em;font-weight:700;color:#e8e8f4;white-space:nowrap}
+    .toast-btns{display:flex;gap:8px}
+    .toast-btn-home{
+      padding:8px 16px;background:var(--primary);color:#fff;border:none;
+      border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.85em;
+      transition:filter .2s
+    }
+    .toast-btn-home:hover{filter:brightness(1.12)}
+    .toast-btn-stay{
+      padding:8px 14px;background:rgba(255,255,255,.08);color:#b8b8d0;border:1px solid rgba(255,255,255,.12);
+      border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.85em;
+      transition:background .2s
+    }
+    .toast-btn-stay:hover{background:rgba(255,255,255,.14)}
+
+    /* ══ CELEBRATION OVERLAY ══ */
+    .celebration-overlay{
+      position:fixed;inset:0;z-index:2000;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(10,10,30,.88);backdrop-filter:blur(10px);
+      opacity:0;pointer-events:none;transition:opacity .4s
+    }
+    .celebration-overlay.active{opacity:1;pointer-events:all}
+    .celebration-overlay.hidden{display:none}
+    .confetti-canvas{position:absolute;inset:0;pointer-events:none}
+    .celebration-content{
+      position:relative;z-index:1;text-align:center;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+      backdrop-filter:blur(24px);border-radius:24px;padding:44px 36px 36px;
+      max-width:420px;width:90%;
+      animation:celebPop .5s cubic-bezier(.34,1.56,.64,1) forwards
+    }
+    @keyframes celebPop{from{transform:scale(.75);opacity:0}to{transform:scale(1);opacity:1}}
+    .celeb-emoji{font-size:3.6em;margin-bottom:10px;display:block;animation:bounce .9s ease infinite alternate}
+    @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+    .celeb-title{font-size:1.9em;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-.5px}
+    .celeb-msg{font-size:1em;color:rgba(255,255,255,.78);margin-bottom:22px;font-weight:500}
+    .celeb-stats{display:flex;gap:12px;justify-content:center;margin-bottom:22px;flex-wrap:wrap}
+    .celeb-stat{
+      background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+      border-radius:12px;padding:12px 20px;min-width:90px
+    }
+    .celeb-stat-val{font-size:1.7em;font-weight:800;color:#fff;line-height:1}
+    .celeb-stat-lbl{font-size:.7em;color:rgba(255,255,255,.6);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .celeb-notes-wrap{margin-bottom:20px;text-align:left}
+    .celeb-notes-label{font-size:.75em;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .celeb-notes{
+      width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.2);border-radius:8px;
+      background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-size:.9em;
+      resize:none;min-height:62px
+    }
+    .celeb-notes::placeholder{color:rgba(255,255,255,.35)}
+    .celeb-notes:focus{outline:none;border-color:rgba(255,255,255,.45)}
+    .celeb-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .celeb-btn-primary{
+      padding:12px 26px;border:none;border-radius:10px;cursor:pointer;font-weight:700;
+      font-family:inherit;font-size:.95em;background:var(--primary);color:#fff;transition:all .2s
+    }
+    .celeb-btn-primary:hover{transform:translateY(-2px);filter:brightness(1.1)}
+    .celeb-btn-ghost{
+      padding:12px 22px;border:2px solid rgba(255,255,255,.45);border-radius:10px;
+      cursor:pointer;font-weight:700;font-family:inherit;font-size:.95em;
+      background:transparent;color:#fff;transition:all .2s
+    }
+    .celeb-btn-ghost:hover{background:rgba(255,255,255,.1)}
+  /* ══ SPLASH SCREEN ══ */
+  .splash-overlay{
+    position:fixed;inset:0;z-index:5000;
+    background:#0d0d1f;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .5s ease;overflow:hidden
+  }
+  .splash-overlay.hidden{display:none}
+  /* Ambient ripple rings in background */
+  .splash-ring{
+    position:absolute;left:50%;top:42%;border-radius:50%;
+    border:1px solid rgba(102,126,234,.12);pointer-events:none;
+    animation:sRipple 5s ease-out infinite;
+  }
+  .splash-ring:nth-child(2){animation-delay:1.7s}
+  .splash-ring:nth-child(3){animation-delay:3.4s}
+  @keyframes sRipple{
+    0%  {width:60px;height:60px;opacity:.7;transform:translate(-50%,-50%)}
+    100%{width:700px;height:700px;opacity:0;transform:translate(-50%,-50%)}
+  }
+  @keyframes pebbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .splash-inner{
+    text-align:center;padding:40px 24px;max-width:480px;width:90%;position:relative;z-index:1
+  }
+  .splash-logo{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:36px}
+  .splash-logo svg{animation:pebbFloat 3.2s ease-in-out infinite}
+  .splash-logo h1{font-size:2.8em;font-weight:800;color:#fff;margin:0;letter-spacing:-.5px}
+  .splash-tagline{
+    font-size:1.45em;font-weight:800;color:#fff;
+    margin-bottom:18px;line-height:1.3;letter-spacing:-.3px
+  }
+  .splash-sub{
+    font-size:.97em;color:rgba(255,255,255,.48);margin-bottom:52px;line-height:1.75
+  }
+  .splash-highlight{
+    background:linear-gradient(135deg,#667eea,#a78bfa);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    font-weight:800
+  }
+  .splash-actions{display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto}
+  .splash-btn-primary{
+    padding:16px;border:none;border-radius:14px;
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
+    color:#fff;font-family:inherit;font-size:1.05em;font-weight:800;
+    cursor:pointer;transition:all .2s;
+    box-shadow:0 6px 24px rgba(102,126,234,.45)
+  }
+  .splash-btn-primary:hover{transform:translateY(-2px);filter:brightness(1.1)}
+  .splash-btn-ghost{
+    padding:14px;border:2px solid rgba(255,255,255,.2);border-radius:14px;
+    background:transparent;color:rgba(255,255,255,.7);font-family:inherit;
+    font-size:1em;font-weight:700;cursor:pointer;transition:all .2s
+  }
+  .splash-btn-ghost:hover{border-color:rgba(255,255,255,.45);color:#fff}
+
+  /* ══ ONBOARDING OVERLAY ══ */
+  .onboarding-overlay{
+    position:fixed;inset:0;z-index:4000;
+    background:#0d0d1f;
+    display:flex;align-items:center;justify-content:center;
+    opacity:1;transition:opacity .4s
+  }
+  .onboarding-overlay.hidden{display:none}
+  .onboarding-box{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    border-radius:24px;padding:48px 40px 40px;
+    max-width:420px;width:90%;text-align:center;
+    box-shadow:0 24px 80px rgba(0,0,0,.5)
+  }
+  .onboarding-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px}
+  .onboarding-logo h2{font-size:1.6em;font-weight:800;color:#fff;margin:0}
+  .onboarding-title{font-size:1.4em;font-weight:800;color:#fff;margin-bottom:8px}
+  .onboarding-sub{font-size:.9em;color:rgba(255,255,255,.55);margin-bottom:28px;line-height:1.5}
+  .onboarding-field{text-align:left;margin-bottom:16px}
+  .onboarding-field label{display:block;font-size:.8em;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .onboarding-field input{
+    width:100%;padding:12px 16px;background:rgba(255,255,255,.08);
+    border:1.5px solid rgba(255,255,255,.15);border-radius:12px;
+    color:#fff;font-family:inherit;font-size:1em;font-weight:500;transition:border-color .2s
+  }
+  .onboarding-field input:focus{outline:none;border-color:var(--primary);background:rgba(255,255,255,.12)}
+  .onboarding-field input::placeholder{color:rgba(255,255,255,.28)}
+  .btn-onboard{
+    width:100%;padding:15px;margin-top:8px;border:none;border-radius:12px;
+    background:var(--primary);color:#fff;font-family:inherit;
+    font-size:1.05em;font-weight:800;cursor:pointer;transition:all .2s;
+    box-shadow:0 4px 20px rgba(102,126,234,.4)
+  }
+  .btn-onboard:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  .onboard-skip{
+    margin-top:14px;font-size:.83em;color:rgba(255,255,255,.35);
+    cursor:pointer;transition:color .2s;background:none;border:none;font-family:inherit
+  }
+  .onboard-skip:hover{color:rgba(255,255,255,.6)}
+  .auth-tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,.06);border-radius:10px;padding:4px}
+  .auth-tab{
+    flex:1;padding:9px;border:none;border-radius:7px;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:.88em;
+    background:transparent;color:rgba(255,255,255,.45);transition:all .2s
+  }
+  .auth-tab.active{background:rgba(255,255,255,.14);color:#fff}
+  .pw-wrap{position:relative}
+  .pw-wrap input{padding-right:42px!important}
+  .pw-toggle{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;padding:4px;
+    color:rgba(255,255,255,.35);font-size:1.1em;line-height:1;transition:color .2s
+  }
+  .pw-toggle:hover{color:rgba(255,255,255,.75)}
+  .auth-error{
+    background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);
+    color:#fca5a5;border-radius:8px;padding:10px 12px;
+    font-size:.83em;font-weight:500;margin-bottom:12px;text-align:left
+  }
+  .auth-loading{color:rgba(255,255,255,.5);font-size:.9em;text-align:center;padding:12px 0}
+  .hidden{display:none!important}
+
+  /* ══ DARK BASE: inputs / labels ══ */
+  label{color:rgba(255,255,255,.55)}
+  input,textarea,select{color:#fff}
+  input::placeholder,textarea::placeholder{color:rgba(255,255,255,.35)}
+  .custom-dur-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+  .custom-dur-lbl{font-size:.62em;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.35)}
+  input.custom-dur{
+    width:72px;padding:9px 6px;background:rgba(255,255,255,.06)!important;
+    border:2px dashed rgba(255,255,255,.25)!important;border-radius:8px;
+    color:#fff!important;font-family:inherit;font-size:.9em;font-weight:700;text-align:center;
+    -moz-appearance:textfield;
+  }
+  input.custom-dur::-webkit-inner-spin-button,input.custom-dur::-webkit-outer-spin-button{-webkit-appearance:none}
+  input.custom-dur::placeholder{color:rgba(255,255,255,.3)!important;font-weight:400}
+  input.custom-dur:focus{outline:none;border-style:solid!important;border-color:var(--primary)!important;background:rgba(255,255,255,.1)!important}
+  body.light-mode .custom-dur-lbl{color:rgba(0,0,0,.35)}
+
+  /* ══ APPEARANCE TOGGLE ══ */
+  .appearance-toggle{display:flex;gap:10px}
+  .appearance-btn{
+    flex:1;padding:12px;border:2px solid rgba(255,255,255,.15);border-radius:10px;
+    cursor:pointer;font-family:inherit;font-weight:700;font-size:.9em;
+    background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);transition:all .2s
+  }
+  .appearance-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+  .appearance-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+  /* ══ LIGHT MODE ══ */
+  body.light-mode{background:#f4f4f5;color:#18181b}
+  body.light-mode h1{color:#18181b}
+  body.light-mode .stat-date{color:#71717a!important}
+  body.light-mode .tab{background:#fff;color:#71717a;border:1px solid #e4e4e7}
+  body.light-mode .tab:hover{background:#f4f4f5;color:#18181b}
+  body.light-mode .tab.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  body.light-mode #progress.tab-content,body.light-mode #history.tab-content,body.light-mode #settings.tab-content{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.06);border:none}
+  body.light-mode .tab-content h2{color:#18181b}
+  body.light-mode .home-card{background:#fff;border-color:#e4e4e7;box-shadow:0 1px 6px rgba(0,0,0,.06);backdrop-filter:none}
+  body.light-mode .home-card-title{color:#18181b}
+  body.light-mode .home-card-desc{color:#71717a}
+  body.light-mode .home-card-nudge{background:#f4f4f5;border-color:#e4e4e7;color:#52525b}
+  body.light-mode .recent-entry{background:#f9f9fa}
+  body.light-mode .recent-area{color:#18181b}
+  body.light-mode .recent-task{color:#71717a}
+  body.light-mode .recent-header{color:#a1a1aa}
+  body.light-mode .carousel-btn{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.1);color:rgba(0,0,0,.5)}
+  body.light-mode .carousel-btn:hover{background:rgba(0,0,0,.1);color:#18181b}
+  body.light-mode .carousel-dot{background:rgba(0,0,0,.2)}
+  body.light-mode .carousel-dot.active{background:#18181b}
+  body.light-mode .area-name{color:#71717a}
+  body.light-mode .area-hours{color:#18181b}
+  body.light-mode .area-goal-text{color:#a1a1aa}
+  body.light-mode .area-pct{color:#a1a1aa}
+  body.light-mode .area-bar-wrap{background:#e4e4e7}
+  body.light-mode .daily-stats{background:var(--primary);box-shadow:none}
+  body.light-mode .progress-column{background:#f9f9fa;border-color:#e4e4e7}
+  body.light-mode .progress-column h3{color:#18181b}
+  body.light-mode .progress-item{background:#fff}
+  body.light-mode .progress-header{color:#18181b}
+  body.light-mode .progress-bar{background:#e4e4e7}
+  body.light-mode .chart-container{background:#fff;border-color:#e4e4e7}
+  body.light-mode .chart-bar-label{color:#71717a}
+  body.light-mode .chart-bar-value{color:#18181b}
+  body.light-mode .log-entry{background:#f9f9fa}
+  body.light-mode .log-header{color:#18181b}
+  body.light-mode .log-task{color:#52525b}
+  body.light-mode .log-notes{color:#71717a}
+  body.light-mode .log-empty{color:#a1a1aa}
+  body.light-mode .settings-section{background:#f9f9fa;border-color:#e4e4e7}
+  body.light-mode .settings-section h3{color:#18181b}
+  body.light-mode .settings-section p{color:#71717a}
+  body.light-mode .goal-card{background:#fff;border-color:#e4e4e7}
+  body.light-mode .area-edit-card{background:#fff;border-color:#e4e4e7}
+  body.light-mode .goal-card-name{color:#52525b}
+  body.light-mode .goal-row label{color:#71717a}
+  body.light-mode .goal-row input{background:#fff;border-color:#e4e4e7;color:#18181b}
+  body.light-mode label{color:#52525b}
+  body.light-mode input,body.light-mode textarea,body.light-mode select{background:#fff;border-color:#e4e4e7;color:#18181b}
+  body.light-mode input:focus,body.light-mode textarea:focus,body.light-mode select:focus{border-color:var(--primary);background:#fff}
+  body.light-mode input::placeholder,body.light-mode textarea::placeholder{color:#a1a1aa}
+  body.light-mode .modal-sheet{background:#fff}
+  body.light-mode .modal-handle{background:#e4e4e7}
+  body.light-mode .modal-area-name{color:#18181b}
+  body.light-mode .form-group label{color:#52525b}
+  body.light-mode .form-group input,body.light-mode .form-group textarea{background:#f9f9fa;border-color:#e4e4e7;color:#18181b}
+  body.light-mode .duration-opt{background:#f4f4f5;border-color:#e4e4e7;color:#71717a}
+  body.light-mode .duration-opt.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  body.light-mode .no-session-msg{color:#a1a1aa}
+  body.light-mode .color-option.active{border-color:#1a202c}
+  body.light-mode .appearance-btn{background:#f4f4f5;border-color:#e4e4e7;color:#71717a}
+  body.light-mode .appearance-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  body.light-mode input[type="color"]{border-color:#e4e4e7}
+  body.light-mode input.custom-dur{border-color:rgba(0,0,0,.25)!important;background:rgba(0,0,0,.04)!important;
+    background:#fff!important;border:2px solid #e4e4e7!important;color:#18181b!important
+  }
+  body.light-mode input.custom-dur::placeholder{color:#a1a1aa!important}
+  body.light-mode input.custom-dur:focus{border-color:var(--primary)!important;background:#fff!important}
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav>
-    <a class="nav-logo" href="#">
-      <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
-        <defs>
-          <linearGradient id="ng" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
-          </linearGradient>
-        </defs>
-        <ellipse cx="20" cy="26" rx="12" ry="10" fill="url(#ng)" opacity=".95"/>
-        <ellipse cx="16" cy="21" rx="4" ry="2.5" fill="white" opacity=".22" transform="rotate(-20 16 21)"/>
-        <path d="M34 30 Q38 22 34 14" stroke="#667eea" stroke-width="2" stroke-linecap="round" fill="none" opacity=".75"/>
-        <path d="M37 32 Q43 22 37 12" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".45"/>
-      </svg>
-      <span>Pebbl</span>
-    </a>
-    <a class="nav-cta" href="./app/">Try it free →</a>
-  </nav>
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-rings">
-      <div class="ring"></div>
-      <div class="ring"></div>
-      <div class="ring"></div>
-      <div class="ring"></div>
-    </div>
-
-    <div class="hero-pebbl">
-      <svg width="72" height="72" viewBox="0 0 44 44" fill="none">
-        <defs>
-          <linearGradient id="hg" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
-          </linearGradient>
-        </defs>
-        <ellipse cx="20" cy="26" rx="12" ry="10" fill="url(#hg)" opacity=".95"/>
+<!-- ══ AUTH ══ -->
+<!-- ══ SPLASH SCREEN ══ -->
+<div class="splash-overlay hidden" id="splashOverlay">
+  <!-- Ambient ripple rings -->
+  <div class="splash-ring"></div>
+  <div class="splash-ring"></div>
+  <div class="splash-ring"></div>
+  <div class="splash-inner">
+    <div class="splash-logo">
+      <svg width="64" height="64" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sg" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
+        </linearGradient></defs>
+        <ellipse cx="20" cy="26" rx="12" ry="10" fill="url(#sg)" opacity=".95"/>
         <ellipse cx="20" cy="26" rx="12" ry="10" fill="white" opacity=".08"/>
         <ellipse cx="16" cy="21" rx="4" ry="2.5" fill="white" opacity=".22" transform="rotate(-20 16 21)"/>
         <path d="M34 30 Q38 22 34 14" stroke="#667eea" stroke-width="2" stroke-linecap="round" fill="none" opacity=".75"/>
         <path d="M37 32 Q43 22 37 12" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".45"/>
       </svg>
+      <h1>Pebbl</h1>
+    </div>
+    <div class="splash-tagline">Productivity apps get one thing backwards.</div>
+    <div class="splash-sub">
+      They're built for people who already want to start.<br><br>
+      Pebbl is for the <span class="splash-highlight">first pebble</span> —
+      that small, reluctant push when everything in you wants to wait.
+    </div>
+    <div class="splash-actions">
+      <button class="splash-btn-primary" onclick="dismissSplash('signup')">Drop your first pebble →</button>
+      <button class="splash-btn-ghost" onclick="dismissSplash('signin')">I already have an account</button>
+    </div>
+  </div>
+</div>
+
+<div class="onboarding-overlay hidden" id="authOverlay">
+  <div class="onboarding-box">
+    <div class="onboarding-logo">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="og" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
+        </linearGradient></defs>
+        <ellipse cx="20" cy="26" rx="12" ry="10" fill="url(#og)" opacity=".95"/>
+        <ellipse cx="20" cy="26" rx="12" ry="10" fill="white" opacity=".08"/>
+        <ellipse cx="16" cy="21" rx="4" ry="2.5" fill="white" opacity=".22" transform="rotate(-20 16 21)"/>
+        <path d="M34 30 Q38 22 34 14" stroke="url(#og)" stroke-width="2" stroke-linecap="round" fill="none" opacity=".5"/>
+        <path d="M37 32 Q43 22 37 12" stroke="url(#og)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".28"/>
+      </svg>
+      <h2>Pebbl</h2>
     </div>
 
-    <div class="hero-label">Free · No credit card · Works on any device</div>
-
-    <h1>Productivity apps get<br>one thing <em>backwards.</em></h1>
-
-    <p class="hero-sub">
-      They're built for people who already want to start.<br>
-      Pebbl is for the first pebble — that small, reluctant push
-      when everything in you wants to wait.
-    </p>
-
-    <div class="hero-actions">
-      <a class="btn-primary" href="./app/">Drop your first pebbl →</a>
-      <span class="hero-note">Free to use · No hustle required</span>
+    <!-- Auth tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabSignIn" onclick="showAuthTab('signin')">Sign in</button>
+      <button class="auth-tab" id="tabSignUp" onclick="showAuthTab('signup')">Create account</button>
     </div>
-  </section>
 
-  <!-- APP PREVIEW -->
-  <div class="preview-section">
-    <div class="app-frame">
-      <div class="app-frame-notch"><div class="app-frame-notch-pill"></div></div>
-      <div class="app-screen">
-        <div class="mini-tabs">
-          <div class="mini-tab active">Focus</div>
-          <div class="mini-tab">Ripples</div>
-          <div class="mini-tab">You</div>
-        </div>
-        <div class="mini-greeting">Good morning.</div>
-        <div class="mini-nudge">Just the first pebble. That's all.</div>
-        <div class="mini-btn">Drop a pebbl →</div>
-        <div class="mini-hint">just 5 minutes · no area needed</div>
-        <div class="mini-divider">or pick where you're focusing</div>
-        <div class="mini-cards">
-          <div class="mini-card">
-            <span class="mini-card-icon">💼</span>
-            <span class="mini-card-name">Client Work</span>
-            <div class="mini-bar-wrap"><div class="mini-bar" style="width:62%;background:#6b9cc4"></div></div>
-            <span class="mini-bar-text">6.2h / 10h</span>
-          </div>
-          <div class="mini-card">
-            <span class="mini-card-icon">📚</span>
-            <span class="mini-card-name">Study</span>
-            <div class="mini-bar-wrap"><div class="mini-bar" style="width:30%;background:#9b84c8"></div></div>
-            <span class="mini-bar-text">3h / 10h</span>
-          </div>
-          <div class="mini-card" style="grid-column:1/-1">
-            <span class="mini-card-icon">🎨</span>
-            <span class="mini-card-name">Creative</span>
-            <div class="mini-bar-wrap"><div class="mini-bar" style="width:15%;background:#c8788a"></div></div>
-            <span class="mini-bar-text">1.5h / 10h</span>
-          </div>
+    <!-- Sign in -->
+    <div id="authSignIn">
+      <div class="onboarding-field">
+        <label>Email</label>
+        <input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="onboarding-field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="siPassword" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('siPassword',this)" tabindex="-1">👁</button>
         </div>
       </div>
+      <div class="auth-error hidden" id="siError"></div>
+      <button class="btn-onboard" onclick="signIn()">Sign in →</button>
+      <button class="onboard-skip" onclick="showForgotPassword()" style="margin-top:12px;width:100%">Forgot your password?</button>
+    </div>
+
+    <!-- Forgot password panel -->
+    <div id="authForgotPw" style="display:none">
+      <button class="onboard-skip" onclick="showAuthTab('signin')" style="margin-bottom:20px;padding:0;text-align:left">← Back to sign in</button>
+      <div class="onboarding-title" style="margin-bottom:6px">Reset your password</div>
+      <div class="onboarding-sub" style="margin-bottom:24px">Enter your email and we'll send you a reset link.</div>
+      <div class="onboarding-field">
+        <label>Email</label>
+        <input type="email" id="fpEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-error hidden" id="fpError"></div>
+      <button class="btn-onboard" onclick="sendPasswordReset()">Send reset link →</button>
+    </div>
+
+    <!-- Reset link sent -->
+    <div id="authResetSent" style="display:none;text-align:center">
+      <div style="font-size:2.8em;margin-bottom:16px">🔑</div>
+      <div class="onboarding-title" style="margin-bottom:8px">Check your email</div>
+      <div class="onboarding-sub" id="resetSentAddr" style="margin-bottom:24px"></div>
+      <div style="background:rgba(102,126,234,.15);border:1px solid rgba(102,126,234,.3);border-radius:12px;padding:14px 16px;font-size:.85em;color:rgba(255,255,255,.7);text-align:left;line-height:1.6;margin-bottom:20px">
+        Click the link in the email to reset your password, then come back and sign in.
+      </div>
+      <button class="btn-onboard" onclick="showAuthTab('signin')">Back to sign in →</button>
+    </div>
+
+    <!-- Set new password (after clicking reset link) -->
+    <div id="authSetNewPw" style="display:none">
+      <div class="onboarding-title" style="margin-bottom:6px">Set a new password</div>
+      <div class="onboarding-sub" style="margin-bottom:24px">Choose something you'll remember.</div>
+      <div class="onboarding-field">
+        <label>New password</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPwInput" placeholder="At least 6 characters" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPwInput',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div class="auth-error hidden" id="newPwError"></div>
+      <button class="btn-onboard" onclick="setNewPassword()">Update password →</button>
+    </div>
+
+    <!-- Sign up -->
+    <div id="authSignUp" style="display:none">
+      <div class="onboarding-field">
+        <label>Your name</label>
+        <input type="text" id="suName" placeholder="e.g. Petra" maxlength="50" autocomplete="name">
+      </div>
+      <div class="onboarding-field">
+        <label>Email</label>
+        <input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="onboarding-field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="suPassword" placeholder="At least 6 characters" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('suPassword',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div class="auth-error hidden" id="suError"></div>
+      <button class="btn-onboard" onclick="signUp()">Create account →</button>
+    </div>
+
+    <div class="auth-loading hidden" id="authLoading">Just a moment…</div>
+
+    <!-- Check email state -->
+    <div id="authCheckEmail" style="display:none;text-align:center">
+      <div style="font-size:2.8em;margin-bottom:16px">📬</div>
+      <div class="onboarding-title" style="margin-bottom:8px">Check your email</div>
+      <div class="onboarding-sub" id="checkEmailAddr" style="margin-bottom:24px"></div>
+      <div style="background:rgba(102,126,234,.15);border:1px solid rgba(102,126,234,.3);border-radius:12px;padding:14px 16px;font-size:.85em;color:rgba(255,255,255,.7);text-align:left;line-height:1.6;margin-bottom:20px">
+        Click the link in the email to confirm your account, then come back here and sign in.
+      </div>
+      <button class="btn-onboard" onclick="showAuthTab('signin')">Go to sign in →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSION ACTIVE BAR ══ -->
+<div class="session-bar" id="sessionBar">
+  <div class="session-bar-dot"></div>
+  <div class="session-bar-info">
+    <span class="session-bar-area" id="sessionBarArea"></span>
+    <span class="session-bar-time" id="sessionBarTime"></span>
+  </div>
+  <button class="session-bar-btn" onclick="switchTab('focus',document.querySelector('[data-tab=focus]'))">⏱ Back to Focus →</button>
+</div>
+
+<!-- ══ SETTINGS TOAST ══ -->
+<div class="settings-toast" id="settingsToast">
+  <span class="toast-msg">✓ Settings saved</span>
+  <div class="toast-btns">
+    <button class="toast-btn-home" onclick="toastGoHome()">Go Home</button>
+    <button class="toast-btn-stay" onclick="dismissToast()">Stay in Settings</button>
+  </div>
+</div>
+
+<!-- ══ CELEBRATION OVERLAY ══ -->
+<div id="celebrationOverlay" class="celebration-overlay hidden">
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+  <div class="celebration-content">
+    <div id="celebEmoji" class="celeb-emoji">🎉</div>
+    <h1 id="celebTitle" class="celeb-title">Session Complete!</h1>
+    <p id="celebMsg" class="celeb-msg"></p>
+    <div class="celeb-stats">
+      <div class="celeb-stat">
+        <div class="celeb-stat-val" id="celebArea">—</div>
+        <div class="celeb-stat-lbl">Area</div>
+      </div>
+      <div class="celeb-stat">
+        <div class="celeb-stat-val" id="celebTime">—</div>
+        <div class="celeb-stat-lbl">Time</div>
+      </div>
+      <div class="celeb-stat">
+        <div class="celeb-stat-val" id="celebPoms">—</div>
+        <div class="celeb-stat-lbl">Pomodoros</div>
+      </div>
+    </div>
+    <div class="celeb-notes-wrap">
+      <div class="celeb-notes-label">Notes (optional)</div>
+      <textarea class="celeb-notes" id="celebNotes" placeholder="What did you work on?&#10;Any blockers? Wins?"></textarea>
+    </div>
+    <div id="celebSaveError" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);border-radius:8px;color:#fca5a5;font-size:.8em;line-height:1.4;text-align:left"></div>
+    <div class="celeb-btns">
+      <button class="celeb-btn-primary" onclick="saveAndClose()">Save &amp; Done</button>
+      <button class="celeb-btn-ghost" onclick="startBreakFromCeleb()">☕ Take a Break</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSION START MODAL ══ -->
+<div class="modal" id="sessionModal" onclick="handleModalBackdrop(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-area-header">
+      <span class="modal-area-icon" id="modalIcon">💼</span>
+      <span class="modal-area-name" id="modalAreaName">Work</span>
+    </div>
+    <div class="form-group">
+      <label>What are you working on?</label>
+      <input type="text" id="sessionTask" list="taskSuggestions" placeholder="e.g. Client proposal, Chapter 4…" autocomplete="off">
+      <datalist id="taskSuggestions"></datalist>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="sessionNotes" placeholder="Goals for this session…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Duration</label>
+      <div class="duration-row">
+        <button class="duration-opt" onclick="setModalDuration(15,this)">15 min</button>
+        <button class="duration-opt active" onclick="setModalDuration(35,this)">35 min</button>
+        <button class="duration-opt" onclick="setModalDuration(60,this)">60 min</button>
+        <input type="number" id="modalCustom" class="custom-dur" placeholder="min" min="1" max="240" title="Custom minutes" oninput="setCustomModalDuration(this)">
+      </div>
+    </div>
+    <button class="btn-start" id="modalStartBtn" onclick="beginSession()">▶ Start Focus Session</button>
+    <button class="btn-cancel" onclick="closeSessionModal()">Cancel</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="brand" style="position:relative">
+    <button id="signOutBtn" onclick="signOut()" style="display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);padding:6px 14px;border-radius:8px;font-family:inherit;font-size:.78em;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.55)'">Sign out</button>
+    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="vg" x1="4" y1="4" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>
+        </linearGradient>
+      </defs>
+      <!-- pebble body -->
+      <ellipse cx="20" cy="26" rx="12" ry="10" fill="url(#vg)" opacity=".95"/>
+      <ellipse cx="20" cy="26" rx="12" ry="10" fill="white" opacity=".08"/>
+      <!-- shine -->
+      <ellipse cx="16" cy="21" rx="4" ry="2.5" fill="white" opacity=".22" transform="rotate(-20 16 21)"/>
+      <!-- ripple arcs -->
+      <path d="M34 30 Q38 22 34 14" stroke="url(#vg)" stroke-width="2" stroke-linecap="round" fill="none" opacity=".5"/>
+      <path d="M37 32 Q43 22 37 12" stroke="url(#vg)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".28"/>
+    </svg>
+    <h1>Pebbl</h1>
+  </div>
+
+  <div class="tabs" id="tabBar">
+    <div class="tab active" data-tab="focus" data-tip="Start your focus session" onclick="switchTab('focus',this)">Focus</div>
+    <div class="tab" data-tab="ripples" data-tip="Your sessions and progress" onclick="switchTab('ripples',this)">Ripples</div>
+    <div class="tab" data-tab="you" data-tip="Customise your Pebbl" onclick="switchTab('you',this)">You</div>
+  </div>
+
+  <!-- ══ FOCUS ══ -->
+  <div id="focus" class="tab-content active">
+
+    <!-- Pre-session: hero CTA + optional area picker -->
+    <div id="focusPreSession">
+
+      <!-- Hero: shown every session -->
+      <div class="focus-hero">
+        <div class="focus-greeting" id="focusGreeting"></div>
+        <div class="focus-nudge" id="focusNudge"></div>
+        <button class="focus-letrip-btn" id="focusLetRipBtn" onclick="startQuickSession()">Drop a pebbl →</button>
+        <div class="focus-letrip-hint" id="focusLetRipHint"></div>
+      </div>
+
+      <!-- Area picker: optional, for intentional tracking -->
+      <div class="focus-area-divider">or pick where you're focusing</div>
+      <div class="focus-last-session" id="focusLastSession" style="display:none"></div>
+      <div class="focus-area-grid" id="focusAreaGrid"></div>
+      <div id="focusStartSection" style="display:none">
+        <div class="timer-options focus-duration">
+          <div class="timer-option" onclick="setTimerDuration(15,this)">15</div>
+          <div class="custom-dur-wrap">
+            <input type="number" id="timerCustom" class="custom-dur" placeholder="own" min="1" max="240" oninput="setCustomTimerDuration(this)">
+            <span class="custom-dur-lbl">custom min</span>
+          </div>
+          <div class="timer-option active" onclick="setTimerDuration(35,this)">35</div>
+        </div>
+        <button class="focus-start-btn" onclick="startFocusSession()">Start Focus →</button>
+      </div>
+    </div>
+
+    <!-- Active timer (shown when session is running) -->
+    <div id="focusTimerSection" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+        <button onclick="cancelSession()" title="Cancel and go back" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:1.4em;cursor:pointer;padding:4px 8px;line-height:1;transition:color .2s" onmouseover="this.style.color='rgba(255,255,255,.7)'" onmouseout="this.style.color='rgba(255,255,255,.3)'">✕</button>
+      </div>
+      <div class="timer-container">
+        <div id="timerSessionLabel" class="timer-session-label">💼 Work</div>
+        <div id="timerTaskLabel" class="timer-task-label"></div>
+        <div class="timer-ring-wrapper">
+          <svg class="timer-svg" viewBox="0 0 300 300">
+            <circle class="ring-track" cx="150" cy="150" r="120"/>
+            <circle class="ring-progress" id="timerRing" cx="150" cy="150" r="120"/>
+          </svg>
+          <div class="timer-inner">
+            <div class="timer-display" id="timerDisplay">35:00</div>
+            <div class="timer-phase" id="timerPhase">💼 Work Time</div>
+          </div>
+        </div>
+        <div class="timer-buttons">
+          <button class="btn-white" onclick="toggleTimer()" id="startBtn">Start</button>
+          <button class="btn-ghost" onclick="resetTimer()">Reset</button>
+          <button class="btn-ghost" onclick="skipPhase()">Skip Phase</button>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:10px">
+          <button class="btn-end-session" id="endSessionBtn" onclick="endSession()">■ Stop &amp; Save</button>
+        </div>
+        <label class="sound-toggle">
+          <input type="checkbox" id="soundToggle" checked onchange="toggleSound()">
+          <span>Tick sound 🔊</span>
+        </label>
+      </div>
+    </div>
+
+  </div><!-- end #focus -->
+
+  <!-- ══ RIPPLES ══ -->
+  <div id="ripples" class="tab-content">
+    <div class="ripples-stats-row" id="ripplesStatsRow"></div>
+    <div class="ripples-section">
+      <div class="ripples-section-title">📊 Weekly Progress</div>
+      <div class="progress-bars" id="weeklyProgressBars"></div>
+    </div>
+    <div class="ripples-section">
+      <div class="ripples-section-title">📅 Monthly</div>
+      <div class="chart-container" id="monthlyChart"></div>
+    </div>
+    <div class="ripples-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="ripples-section-title" style="margin-bottom:0">Sessions</div>
+        <button class="btn-export" onclick="downloadHistory()">⬇ Export CSV</button>
+      </div>
+      <div class="session-log" id="sessionLog"></div>
     </div>
   </div>
 
-  <!-- WHAT IT IS -->
-  <section>
-    <div class="section-inner">
-      <div class="section-label">What is Pebbl</div>
-      <h2 class="section-title">A focus tracker built for scattered minds.</h2>
-      <p class="section-body">
-        Not another to-do list. Not a Pomodoro timer with a leaderboard.
-        Pebbl is a quiet, gentle tool that meets you where you are —
-        whether that's "completely frozen" or "I have five minutes and nothing else."
-        Drop a pebble. Watch the ripples follow.
-      </p>
-    </div>
-  </section>
+  <!-- ══ YOU ══ -->
+  <div id="you" class="tab-content">
+    <h2>Settings</h2>
 
-  <!-- FOR WHOM -->
-  <section class="for-section">
-    <div class="section-inner">
-      <div class="section-label">Who it's for</div>
-      <h2 class="section-title">Built for people most apps forget.</h2>
-      <div class="for-grid">
-        <div class="for-card">
-          <span class="for-card-icon">🧠</span>
-          <div class="for-card-title">ADHD brains</div>
-          <p class="for-card-body">No overwhelming dashboards. No shame streaks. Just a single, low-friction nudge to begin.</p>
+    <div class="settings-section">
+      <h3>👤 Profile</h3>
+      <p>Your name and email are stored locally on this device only.</p>
+      <div class="goal-grid" style="grid-template-columns:1fr 1fr">
+        <div class="goal-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <label style="font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Name</label>
+          <input type="text" id="profileName" placeholder="Your name" maxlength="50" style="width:100%;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:.95em">
         </div>
-        <div class="for-card">
-          <span class="for-card-icon">😶</span>
-          <div class="for-card-title">Chronic procrastinators</div>
-          <p class="for-card-body">The dread of starting is always worse than starting. Pebbl is designed around that truth.</p>
-        </div>
-        <div class="for-card">
-          <span class="for-card-icon">🌿</span>
-          <div class="for-card-title">Quiet workers</div>
-          <p class="for-card-body">No hustle culture. No streaks to protect. Just calm, honest tracking of your actual work.</p>
+        <div class="goal-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <label style="font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Email</label>
+          <input type="email" id="profileEmail" placeholder="you@example.com" style="width:100%;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:.95em">
         </div>
       </div>
+      <button class="btn-save-goals" onclick="saveProfileFromSettings()" style="margin-top:14px">Save Profile</button>
     </div>
-  </section>
 
-  <!-- HOW IT WORKS -->
-  <section>
-    <div class="section-inner">
-      <div class="section-label">How it works</div>
-      <h2 class="section-title">Three steps. One pebble at a time.</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div class="step-text">
-            <h3>Drop a pebbl</h3>
-            <p>Tap once. A 5-minute free-focus session starts. No area to pick, no task to name. Just begin.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div class="step-text">
-            <h3>Watch the ripples</h3>
-            <p>Every session creates a ripple. Track your focus across areas — client work, study, creative — at whatever pace suits you.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div class="step-text">
-            <h3>Build momentum gently</h3>
-            <p>No leaderboards. No shame. Just a quiet record of showing up — and proof that you can do it again.</p>
-          </div>
-        </div>
+    <div class="settings-section">
+      <h3>✏️ Your Areas</h3>
+      <p>Rename, recolour, or change the icon for each focus area. Note: renaming won't update past sessions.</p>
+      <div class="area-edit-grid" id="areaEditGrid"></div>
+      <button class="btn-save-goals" onclick="saveAreas()" style="margin-top:16px">Save Areas</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>🎯 Weekly Goals</h3>
+      <p>Hours you aim to spend in each area per week</p>
+      <div class="goal-grid" id="goalGrid"></div>
+      <button class="btn-save-goals" onclick="saveGoals()" style="margin-top:16px">Save Goals</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>🌓 Appearance</h3>
+      <p>Switch between dark and light mode</p>
+      <div class="appearance-toggle">
+        <button class="appearance-btn" id="btnDark" onclick="setAppearance('dark')">🌙 Dark</button>
+        <button class="appearance-btn" id="btnLight" onclick="setAppearance('light')">☀️ Light</button>
       </div>
     </div>
-  </section>
 
-  <!-- BUILT IN PUBLIC -->
-  <section class="bip-section">
-    <div class="bip-inner">
-      <span class="bip-icon">🪨</span>
-      <div class="bip-title">Built in public. By someone who needed it.</div>
-      <p class="bip-body">
-        Pebbl started as a personal tool for a scattered mind trying to get things done without burning out.
-        It's being built in the open — imperfect, honest, and improving with every pebble dropped.
-      </p>
-      <a class="bip-link" href="https://twitter.com" target="_blank">Follow the build →</a>
+    <div class="settings-section">
+      <h3>🎨 Theme</h3>
+      <p>Choose an accent colour</p>
+      <div class="color-options" id="colorOptions"></div>
     </div>
-  </section>
 
-  <!-- FINAL CTA -->
-  <section class="cta-section">
-    <h2 class="cta-title">Nobody builds for the first pebble.<br>We do.</h2>
-    <p class="cta-sub">Free to use. No credit card. Works on any device.</p>
-    <a class="btn-primary" href="./app/">Drop your first pebbl →</a>
-    <p class="cta-small">Takes 30 seconds to get started.</p>
-  </section>
+    <div class="settings-section">
+      <h3>⚠️ Data</h3>
+      <p>Delete sessions by area, or wipe everything. This cannot be undone.</p>
+      <div class="area-reset-grid" id="areaResetGrid"></div>
+      <button class="btn-danger" onclick="resetAllData()">Reset All Session Data</button>
+    </div>
+  </div>
+</div>
 
-  <!-- FOOTER -->
-  <footer>
-    <span>© 2026 Pebbl · <a href="mailto:petra.mybusiness@gmail.com">Contact</a></span>
-    <span>Made with quiet determination 🪨</span>
-  </footer>
+<script>
+// ══ SUPABASE ══
+const SUPABASE_URL  = 'https://nqgawtyzynggdouanzrr.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_au3b9IbvnK7ECv2PJxGxMw_xGNJaTs8';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ══ CONFIG ══
+function getAreaIconPath(name) {
+  const n = (name || '').toLowerCase();
+  if (n === 'work')
+    return '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 12h20"/>';
+  if (n === 'study')
+    return '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>';
+  if (n === 'creative')
+    return '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>';
+  // generic: target/circle icon for custom areas
+  return '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/>';
+}
+
+const DEFAULT_AREAS = [
+  {name:'Work',     icon:'💼', color:'#6b9cc4'},
+  {name:'Study',    icon:'📚', color:'#9b84c8'},
+  {name:'Creative', icon:'✍️',  color:'#c8788a'}
+];
+let AREAS = [...DEFAULT_AREAS];
+
+const DEFAULT_GOALS = {Work:{weekly:10,monthly:40},Study:{weekly:16,monthly:64},Creative:{weekly:5,monthly:20}};
+
+const EMOJI_SETS = [
+  {cat:'Work & Study', emojis:['💼','📚','💻','✍️','🎯','📊','📝','🔬','⚙️','🧠','💡','📐','🖥️','📱','🎓','🗂️','📌','🧮','🔭','📡']},
+  {cat:'Health & Body', emojis:['🏃','🧘','💪','🚴','🏊','🥗','😴','❤️','🌿','🏋️','🤸','🧬','🫀','🧪','🥤','🍎','🛌','🧖']},
+  {cat:'Creative', emojis:['🎨','🎸','🎹','📷','✏️','🖌️','🎭','🎬','🎼','📖','🪡','🧶','🎙️','🖊️','🎺','🥁','🎻','🪗','🖼️']},
+  {cat:'Life & Home',  emojis:['🏠','🌱','🍳','🧹','💰','🐾','🌸','☀️','🌙','⭐','🎁','🪴','🧺','🔑','🕯️','🪑','🛁','🪟']},
+  {cat:'People',       emojis:['❤️','👥','📞','🤝','💬','🫂','🧑‍🤝‍🧑','👨‍👩‍👧','👶','🐶','🐱','🦜','🌻','💌','🎉']},
+  {cat:'Play & Rest',  emojis:['🎮','🎲','🎬','📺','🎵','⚽','🏖️','🌴','✈️','🎪','🎡','🃏','🎳','🎯','🏄','🎿','🧩']},
+  {cat:'Energy',       emojis:['🔥','⚡','💫','🌊','🪨','🌈','💎','🗝️','🔮','🌀','⚜️','🕊️','🦋','🌟','☄️','🏔️','🌋','🦅']}
+];
+
+const KUDOS = [
+  'Another one in the books.','Consistency compounds.','Progress logged.',
+  'That\'s one more block done.','Momentum maintained.','Keep showing up.',
+  'You did the work.','One session closer.','Future you is grateful.'
+];
+
+const COLOR_THEMES = [
+  {name:'Indigo',     primary:'#667eea', secondary:'#764ba2'},
+  {name:'Violet',     primary:'#9b84c8', secondary:'#7c5cbf'},
+  {name:'Teal',       primary:'#4aadb5', secondary:'#2d8a92'},
+  {name:'Rose',       primary:'#e57a8a', secondary:'#c4546a'},
+  {name:'Amber',      primary:'#f59e4a', secondary:'#d97706'},
+  {name:'Sage',       primary:'#7a9e7e', secondary:'#5a7e5e'}
+];
+
+const CIRCUMFERENCE = 753.98;
+const BREAK_TIME = 10 * 60;
+
+// ══ STORAGE (device prefs only — theme, appearance) ══
+const store = {
+  get:(k)=>{ const v=localStorage.getItem(k); return v?JSON.parse(v):null },
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+  del:(k)=>localStorage.removeItem(k)
+};
+
+// ══ STATE ══
+let sessions   = [];
+let areaGoals  = {...DEFAULT_GOALS};
+let activeArea = '';
+let activeTask = '';
+let modalDuration = 35;
+let currentUser = null;
+
+let timerInterval     = null;
+let timeRemaining     = 35 * 60;
+let selectedDuration  = 35;
+let isWorkPhase       = true;
+let isRunning         = false;
+let pomodorosCompleted = 0;
+let timerStartTime    = null;
+let pausedTimeRemaining = null;
+let sessionElapsed    = 0; // seconds of work-phase time completed
+let sessionStartedAt  = null;
+let soundEnabled       = true;
+let isPasswordRecovery = false;
+let isSigningUp        = false;
+let dragAreaSrc        = null;
+let audioContext      = null;
+let confettiFrame     = null;
+let userDataLoaded     = false; // prevents double-load from onAuthStateChange immediate fire
+
+// ══ INIT ══
+async function init() {
+  // Detect password recovery redirect BEFORE any auth events fire.
+  // Supabase puts type=recovery in the URL hash when the user clicks a reset link.
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const searchParams = new URLSearchParams(window.location.search);
+  if (hashParams.get('type') === 'recovery' || searchParams.get('type') === 'recovery') {
+    isPasswordRecovery = true;
+  }
+
+  // Device prefs (always local)
+  const savedAppearance = store.get('appearance') || 'dark';
+  setAppearance(savedAppearance);
+  const theme = store.get('theme') || COLOR_THEMES[0];
+  applyTheme(theme);
+
+  // Check Supabase session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    if (isPasswordRecovery) {
+      // Don't show the app — show the set-new-password form instead
+      document.getElementById('splashOverlay').classList.add('hidden');
+      document.getElementById('authOverlay').classList.remove('hidden');
+      document.querySelector('.auth-tabs').style.display = 'none';
+      hideAllAuthPanels();
+      document.getElementById('authSetNewPw').style.display = '';
+    } else {
+      currentUser = session.user;
+      await loadUserData();
+      userDataLoaded = true;
+      showApp();
+    }
+  } else {
+    showAuthOverlay();
+  }
+
+  // Listen for auth changes.
+  // NOTE: Supabase v2 fires SIGNED_IN immediately on registration — userDataLoaded prevents
+  // a redundant second load that can wipe sessions if the query races.
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      isPasswordRecovery = true;
+      document.getElementById('splashOverlay').classList.add('hidden');
+      document.getElementById('authOverlay').classList.remove('hidden');
+      document.querySelector('.auth-tabs').style.display = 'none';
+      hideAllAuthPanels();
+      document.getElementById('authSetNewPw').style.display = '';
+    } else if (event === 'SIGNED_IN' && session) {
+      if (isPasswordRecovery) return;
+      if (isSigningUp) return;
+      currentUser = session.user;
+      if (!userDataLoaded) {
+        await loadUserData();
+        userDataLoaded = true;
+      }
+      showApp();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      sessions = [];
+      AREAS = [...DEFAULT_AREAS];
+      areaGoals = {...DEFAULT_GOALS};
+      userDataLoaded = false;
+      showAuthOverlay();
+    }
+  });
+}
+
+async function loadUserData() {
+  // Load settings (areas, goals, profile name, appearance, theme)
+  const { data: settings } = await sb
+    .from('user_settings')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  const existingProfile = store.get('profile') || {};
+  if (settings) {
+    if (settings.areas && Array.isArray(settings.areas) && settings.areas.length > 0) AREAS = settings.areas;
+    if (settings.goals) areaGoals = settings.goals;
+    // Use Supabase name if available, otherwise keep whatever's in localStorage
+    store.set('profile', {name: settings.name || existingProfile.name || '', email: currentUser.email});
+    // Restore appearance and theme from cloud (so they survive across devices/browsers)
+    if (settings.appearance) {
+      store.set('appearance', settings.appearance);
+      if (settings.appearance === 'light') document.body.classList.add('light-mode');
+      else document.body.classList.remove('light-mode');
+    }
+    if (settings.theme) {
+      store.set('theme', settings.theme);
+      applyTheme(settings.theme);
+    }
+  } else {
+    AREAS = [...DEFAULT_AREAS];
+    areaGoals = {...DEFAULT_GOALS};
+    store.set('profile', {name: existingProfile.name || '', email: currentUser.email});
+  }
+
+  // Load sessions from Supabase, with localStorage cache as fallback
+  const { data: rows, error: sessErr } = await sb
+    .from('sessions')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('date', {ascending: false});
+
+  if (sessErr) {
+    console.error('Sessions load error:', sessErr);
+    // Fall back to localStorage cache so data isn't lost on a bad request
+    const cached = store.get('sessions_cache');
+    if (cached && cached.length) {
+      sessions = cached;
+      console.warn('Using cached sessions from localStorage');
+    }
+  } else {
+    sessions = (rows || []).map(r => ({
+      id: r.id,
+      area: r.area,
+      task: r.task || '',
+      hours: parseFloat(r.hours) || 0,
+      notes: r.notes || '',
+      date: r.date,
+      pomodoros: r.pomodoros || 0
+    }));
+    // Keep cache in sync with Supabase
+    cacheSessionsLocally();
+  }
+}
+
+function showApp() {
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('splashOverlay').classList.add('hidden');
+  store.set('pebbl_visited', true);
+  const btn = document.getElementById('signOutBtn');
+  if (btn) btn.style.display = 'block';
+  // Request notification permission on sign-in so the prompt is visible
+  requestNotificationPermission();
+  renderFocus();
+  updateTimerDisplay();
+  updateTimerRing();
+}
+
+function showAuthOverlay(tab) {
+  const hasVisited = store.get('pebbl_visited');
+  if (!hasVisited) {
+    // First-time visitor — show splash instead
+    document.getElementById('splashOverlay').classList.remove('hidden');
+  } else {
+    // Returning visitor — go straight to auth
+    document.getElementById('authOverlay').classList.remove('hidden');
+    if (tab) showAuthTab(tab);
+  }
+  const btn = document.getElementById('signOutBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function dismissSplash(tab) {
+  store.set('pebbl_visited', true);
+  const splash = document.getElementById('splashOverlay');
+  splash.style.opacity = '0';
+  setTimeout(() => {
+    splash.classList.add('hidden');
+    splash.style.opacity = '';
+    document.getElementById('authOverlay').classList.remove('hidden');
+    showAuthTab(tab || 'signup');
+  }, 450);
+}
+
+function migrateSession(s) {
+  if (s.area) return s;
+  const WORK_SUBJECTS = ['Client Work'];
+  const CREATIVE_SUBJECTS = ['Writing','Documenting'];
+  let area = 'Study';
+  if (WORK_SUBJECTS.includes(s.subject)) area = 'Work';
+  else if (CREATIVE_SUBJECTS.includes(s.subject)) area = 'Creative';
+  return { area, task: s.subject || '', hours: s.hours || 0, notes: s.notes || '', date: s.date, pomodoros: s.pomodoros || 0 };
+}
+
+// ══ SESSION ACTIVE UI ══
+function updateSessionActiveUI() {
+  const sessionRunning = isRunning && isWorkPhase && !!activeArea;
+  const onFocusTab = document.getElementById('focus').classList.contains('active');
+
+  // Dim tabs whenever a session is active (regardless of tab)
+  const tabBar = document.getElementById('tabBar');
+  if (tabBar) tabBar.classList.toggle('focus-mode', !!activeArea);
+
+  const focusTab = document.querySelector('[data-tab="focus"]');
+  if (focusTab) focusTab.classList.toggle('session-active', sessionRunning && !onFocusTab);
+
+  const bar = document.getElementById('sessionBar');
+  if (bar) {
+    if (sessionRunning && !onFocusTab) {
+      bar.classList.add('visible');
+      const m = Math.floor(timeRemaining / 60);
+      const s = timeRemaining % 60;
+      const areaEl = document.getElementById('sessionBarArea');
+      const timeEl = document.getElementById('sessionBarTime');
+      if (areaEl) areaEl.textContent = activeArea;
+      if (timeEl) timeEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} left`;
+    } else {
+      bar.classList.remove('visible');
+      if (focusTab) focusTab.classList.remove('session-active');
+    }
+  }
+}
+
+// ── NOTIFICATIONS ──
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendTimerNotification(label) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification('🪨 Pebbl — Time\'s up!', {
+    body: `Your ${label} session is complete. Nice work.`,
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    silent: false
+  });
+}
+
+// ══ TABS ══
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  (el || document.querySelector(`[data-tab="${name}"]`)).classList.add('active');
+  document.getElementById(name).classList.add('active');
+  if (name === 'focus')   renderFocus();
+  if (name === 'ripples') { renderRipples(); }
+  if (name === 'you')     renderSettings();
+  updateSessionActiveUI();
+}
+
+// ══ FOCUS ══
+const FOCUS_NUDGES = [
+  "Just the first pebble. That's all.",
+  "You don't have to feel ready to start.",
+  "Pick one thing. Just one.",
+  "The dread of starting is always worse than starting.",
+  "You've done it before. You can do it now.",
+  "Small start. Real progress.",
+  "One focused moment changes the whole day.",
+  "Momentum starts with a single move.",
+  "The hardest step is showing up. You're already here.",
+  "Just begin. The rest follows.",
+];
+let nudgeIndex = Math.floor(Math.random() * FOCUS_NUDGES.length);
+let nudgeTimer = null;
+let selectedFocusArea = null;
+
+function startNudgeRotation() {
+  const el = document.getElementById('focusNudge');
+  if (!el) return;
+  if (nudgeTimer) clearInterval(nudgeTimer);
+  function showNext() {
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.textContent = FOCUS_NUDGES[nudgeIndex % FOCUS_NUDGES.length];
+      nudgeIndex++;
+      el.style.opacity = '1';
+    }, 500);
+  }
+  showNext();
+  nudgeTimer = setInterval(showNext, 6000);
+}
+
+function renderFocusGreeting() {
+  const el = document.getElementById('focusGreeting');
+  if (!el) return;
+  const profile = store.get('profile') || {};
+  const name = profile.name || '';
+  const h = new Date().getHours();
+  const part = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  el.textContent = name ? `Good ${part}, ${name}.` : `Good ${part}.`;
+}
+
+function renderFocusAreaGrid() {
+  const grid = document.getElementById('focusAreaGrid');
+  if (!grid) return;
+  const weekSessions = getWeekSessions();
+  grid.innerHTML = AREAS.map(area => {
+    const done = weekSessions.filter(s => s.area === area.name).reduce((s,x) => s+x.hours, 0);
+    const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name] || {weekly:10}).weekly;
+    const pct  = Math.min((done / goal) * 100, 100);
+    return `
+      <div class="focus-area-card${selectedFocusArea === area.name ? ' selected' : ''}"
+           data-area="${area.name}"
+           onclick="selectFocusArea('${area.name}')">
+        <span class="focus-area-card-icon">${area.icon}</span>
+        <span class="focus-area-card-name">${area.name}</span>
+        <div class="focus-area-progress-wrap">
+          <div class="focus-area-progress-fill" style="width:${pct}%;background:${area.color}"></div>
+        </div>
+        <span class="focus-area-progress-text">${done > 0 ? done.toFixed(1)+'h' : '—'} / ${goal}h</span>
+      </div>`;
+  }).join('');
+}
+
+function renderLastSessionNudge() {
+  const el = document.getElementById('focusLastSession');
+  if (!el) return;
+  if (!sessions.length) { el.style.display = 'none'; return; }
+  const last = sessions[0];
+  const area = AREAS.find(a => a.name === last.area) || {icon:'', name: last.area};
+  const daysSince = Math.floor((Date.now() - new Date(last.date)) / 86400000);
+  const whenStr = daysSince === 0 ? 'today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`;
+  el.style.display = 'flex';
+  el.innerHTML = `<span>Last session:</span> <strong>${area.icon} ${last.area}</strong> <span>· ${whenStr} · ${last.hours.toFixed(1)}h</span>`;
+}
+
+function selectFocusArea(areaName) {
+  selectedFocusArea = areaName;
+  document.querySelectorAll('.focus-area-card').forEach(c =>
+    c.classList.toggle('selected', c.dataset.area === areaName)
+  );
+  const ss = document.getElementById('focusStartSection');
+  if (ss) ss.style.display = '';
+}
+
+function startFocusSession() {
+  if (!selectedFocusArea) return;
+  const area = AREAS.find(a => a.name === selectedFocusArea);
+  if (!area) return;
+
+  activeArea = area.name;
+  activeTask = '';
+  sessionElapsed = 0;
+  sessionStartedAt = null;
+  pomodorosCompleted = 0;
+  document.getElementById('celebNotes').value = '';
+
+  clearInterval(timerInterval);
+  isRunning = false; isWorkPhase = true;
+  timeRemaining = selectedDuration * 60;
+  updateTimerDisplay();
+  updateTimerRing();
+
+  document.getElementById('timerSessionLabel').textContent = `${area.icon} ${area.name}`;
+  document.getElementById('timerTaskLabel').textContent = '';
+  document.getElementById('startBtn').textContent = 'Start';
+  const endBtn = document.getElementById('endSessionBtn');
+  if (endBtn) endBtn.style.display = 'block';
+
+  // Switch to timer view within focus tab
+  document.getElementById('focusPreSession').style.display = 'none';
+  document.getElementById('focusTimerSection').style.display = '';
+}
+
+function resetFocusToPreSession() {
+  selectedFocusArea = null;
+  const pre = document.getElementById('focusPreSession');
+  const timer = document.getElementById('focusTimerSection');
+  const ss = document.getElementById('focusStartSection');
+  if (pre) pre.style.display = '';
+  if (timer) timer.style.display = 'none';
+  if (ss) ss.style.display = 'none';
+  renderFocusAreaGrid();
+}
+
+function cancelSession() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  activeArea = '';
+  activeTask = '';
+  sessionElapsed = 0;
+  sessionStartedAt = null;
+  const tabBar = document.getElementById('tabBar');
+  if (tabBar) tabBar.classList.remove('focus-mode');
+  resetFocusToPreSession();
+  renderFocus();
+}
+
+function startQuickSession() {
+  // Area-free quick start — 5 minutes, no tracking category
+  activeArea = 'Freeform';
+  activeTask = '';
+  sessionElapsed = 0; sessionStartedAt = null; pomodorosCompleted = 0;
+  document.getElementById('celebNotes').value = '';
+  clearInterval(timerInterval);
+  isRunning = false; isWorkPhase = true;
+  selectedDuration = 5;
+  timeRemaining = 5 * 60;
+  updateTimerDisplay(); updateTimerRing();
+
+  document.getElementById('timerSessionLabel').textContent = '🪨 Free focus';
+  document.getElementById('timerTaskLabel').textContent = '';
+  document.getElementById('startBtn').textContent = 'Start';
+  const endBtn = document.getElementById('endSessionBtn');
+  if (endBtn) endBtn.style.display = 'block';
+
+  document.getElementById('focusPreSession').style.display = 'none';
+  document.getElementById('focusTimerSection').style.display = '';
+}
+
+function renderFocus() {
+  renderFocusGreeting();
+  renderLastSessionNudge();
+  renderFocusAreaGrid();
+  startNudgeRotation();
+
+  // Hint below quick-start button
+  const hint = document.getElementById('focusLetRipHint');
+  if (hint) hint.textContent = 'just 5 minutes · no area needed';
+
+  // If a session is active, stay on timer view
+  if (activeArea) {
+    document.getElementById('focusPreSession').style.display = 'none';
+    document.getElementById('focusTimerSection').style.display = '';
+  } else {
+    document.getElementById('focusPreSession').style.display = '';
+    document.getElementById('focusTimerSection').style.display = 'none';
+    const ss = document.getElementById('focusStartSection');
+    if (ss) ss.style.display = selectedFocusArea ? '' : 'none';
+  }
+}
+
+// ══ RIPPLES ══
+function renderRipples() {
+  renderRipplesStats();
+  renderProgress();
+  renderHistory();
+}
+
+function renderRipplesStats() {
+  const el = document.getElementById('ripplesStatsRow');
+  if (!el) return;
+  const week = getWeekSessions();
+  const totalHours = week.reduce((s,x) => s + x.hours, 0);
+  const h = Math.floor(totalHours);
+  const m = Math.round((totalHours - h) * 60);
+  const streak = calculateStreak();
+  const focusStr = totalHours > 0 ? (h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`) : '—';
+  el.innerHTML = `
+    <div class="ripple-stat"><div class="ripple-stat-val">${focusStr}</div><div class="ripple-stat-lbl">This Week</div></div>
+    <div class="ripple-stat"><div class="ripple-stat-val">${week.length || '—'}</div><div class="ripple-stat-lbl">Sessions</div></div>
+    <div class="ripple-stat"><div class="ripple-stat-val">${streak > 0 ? streak + ' 🔥' : '—'}</div><div class="ripple-stat-lbl">Streak</div></div>
+  `;
+}
+
+function getTodaySessions() {
+  const tod = new Date(); tod.setHours(0,0,0,0);
+  return sessions.filter(s => { const d=new Date(s.date); d.setHours(0,0,0,0); return d.getTime()===tod.getTime(); });
+}
+
+function getWeekSessions() {
+  const ago = new Date(); ago.setDate(ago.getDate()-7);
+  return sessions.filter(s => new Date(s.date) >= ago);
+}
+
+function calculateStreak() {
+  if (!sessions.length) return 0;
+  const hasDay = d => sessions.some(s => {
+    const sd = new Date(s.date); sd.setHours(0,0,0,0);
+    return sd.getTime() === d.getTime();
+  });
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  // Start from today if it has sessions, else yesterday — if neither, streak is broken
+  const start = hasDay(today) ? new Date(today) : hasDay(yesterday) ? new Date(yesterday) : null;
+  if (!start) return 0;
+  let streak = 0;
+  const check = start;
+  while (hasDay(check)) {
+    streak++;
+    check.setDate(check.getDate() - 1);
+  }
+  return streak;
+}
+
+function renderDailyStats() {
+  const week = getWeekSessions();
+  const totalHours = week.reduce((s,x) => s + x.hours, 0);
+  const h = Math.floor(totalHours);
+  const m = Math.round((totalHours - h) * 60);
+  const streak = calculateStreak();
+  document.getElementById('statFocus').textContent =
+    totalHours > 0 ? (h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`) : '—';
+  document.getElementById('statSessions').textContent = week.length || '—';
+  document.getElementById('statStreak').textContent = streak > 0 ? `${streak} 🔥` : '—';
+}
+
+let carouselIndex = 0;
+
+function renderAreaCards() {
+  carouselIndex = Math.min(carouselIndex, AREAS.length - 1);
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+function renderCarouselCard() {
+  const hero = document.getElementById('areaHeroCard');
+  if (!hero) return;
+  const weekSessions = getWeekSessions();
+  const area = AREAS[carouselIndex];
+  const done = weekSessions.filter(s => s.area === area.name).reduce((s,x) => s+x.hours, 0);
+  const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name]).weekly;
+  const pct  = Math.min((done / goal) * 100, 100);
+  const hoursDisplay = done > 0 ? `${done.toFixed(1)}h` : '—';
+  const pctDisplay   = done > 0 ? `${pct.toFixed(0)}% of goal` : 'Ready when you are';
+  // darken the accent colour for gradient end
+  const dark = area.color.replace(/^#/, '');
+  const r = Math.max(0, parseInt(dark.slice(0,2),16) - 40).toString(16).padStart(2,'0');
+  const g = Math.max(0, parseInt(dark.slice(2,4),16) - 40).toString(16).padStart(2,'0');
+  const b = Math.max(0, parseInt(dark.slice(4,6),16) - 40).toString(16).padStart(2,'0');
+  const accentDark = `#${r}${g}${b}`;
+
+  hero.innerHTML = `
+    <div class="area-hero" style="--accent-color:${area.color};--accent-dark:${accentDark}" onclick="openSessionModal(AREAS[${carouselIndex}])">
+      <div class="area-hero-inner">
+        <div class="area-hero-top">
+          <div>
+            <div class="area-hero-name">${area.name}</div>
+            <div class="area-hero-hours">${hoursDisplay}</div>
+            <div class="area-hero-goal">of ${goal}h this week</div>
+          </div>
+          <div class="area-hero-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${getAreaIconPath(area.name)}</svg>
+          </div>
+        </div>
+        <div class="area-hero-bar-wrap"><div class="area-hero-bar-fill" style="width:${pct}%"></div></div>
+        <div class="area-hero-pct">${pctDisplay}</div>
+        <div class="area-hero-start">▶ Start Session</div>
+      </div>
+    </div>`;
+}
+
+function renderCarouselDots() {
+  const dots = document.getElementById('carouselDots');
+  if (!dots) return;
+  dots.innerHTML = AREAS.map((_, i) =>
+    `<div class="carousel-dot${i === carouselIndex ? ' active' : ''}" onclick="carouselGoTo(${i})"></div>`
+  ).join('');
+}
+
+function carouselNext() {
+  carouselIndex = (carouselIndex + 1) % AREAS.length;
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+function carouselPrev() {
+  carouselIndex = (carouselIndex - 1 + AREAS.length) % AREAS.length;
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+function carouselGoTo(i) {
+  carouselIndex = i;
+  renderCarouselCard();
+  renderCarouselDots();
+}
+
+// ══ AUTH ══
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+
+const AUTH_PANELS = ['authSignIn','authSignUp','authCheckEmail','authForgotPw','authResetSent','authSetNewPw'];
+function hideAllAuthPanels() {
+  AUTH_PANELS.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+}
+
+function showAuthTab(tab) {
+  document.querySelector('.auth-tabs').style.display = '';
+  hideAllAuthPanels();
+  document.getElementById(tab === 'signin' ? 'authSignIn' : 'authSignUp').style.display = '';
+  document.getElementById('tabSignIn').classList.toggle('active', tab === 'signin');
+  document.getElementById('tabSignUp').classList.toggle('active', tab === 'signup');
+  document.getElementById('siError').classList.add('hidden');
+  document.getElementById('suError').classList.add('hidden');
+}
+
+function showForgotPassword() {
+  document.querySelector('.auth-tabs').style.display = 'none';
+  hideAllAuthPanels();
+  document.getElementById('authForgotPw').style.display = '';
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('fpEmail').value.trim();
+  const errEl = document.getElementById('fpError');
+  errEl.classList.add('hidden');
+  if (!email) { errEl.textContent = 'Please enter your email address.'; errEl.classList.remove('hidden'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+  hideAllAuthPanels();
+  document.getElementById('resetSentAddr').textContent = `We've sent a reset link to ${email}.`;
+  document.getElementById('authResetSent').style.display = '';
+}
+
+async function setNewPassword() {
+  const pw = document.getElementById('newPwInput').value;
+  const errEl = document.getElementById('newPwError');
+  errEl.classList.add('hidden');
+  if (pw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.remove('hidden'); return; }
+  const { error } = await sb.auth.updateUser({ password: pw });
+  if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+  // Password updated — clear recovery flag, then load app manually
+  isPasswordRecovery = false;
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) {
+    currentUser = user;
+    await loadUserData();
+    showApp();
+  }
+}
+
+function setAuthLoading(on) {
+  document.getElementById('authLoading').classList.toggle('hidden', !on);
+  document.getElementById('authSignIn').style.opacity = on ? '.4' : '1';
+  document.getElementById('authSignUp').style.opacity = on ? '.4' : '1';
+}
+
+async function signIn() {
+  const email    = document.getElementById('siEmail').value.trim();
+  const password = document.getElementById('siPassword').value;
+  const errEl    = document.getElementById('siError');
+  errEl.classList.add('hidden');
+  if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.classList.remove('hidden'); return; }
+  setAuthLoading(true);
+  const { error } = await sb.auth.signInWithPassword({email, password});
+  setAuthLoading(false);
+  if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); }
+}
+
+async function signUp() {
+  const name     = document.getElementById('suName').value.trim();
+  const email    = document.getElementById('suEmail').value.trim();
+  const password = document.getElementById('suPassword').value;
+  const errEl    = document.getElementById('suError');
+  errEl.classList.add('hidden');
+  if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.remove('hidden'); return; }
+  setAuthLoading(true);
+  isSigningUp = true;
+  const { data, error } = await sb.auth.signUp({email, password});
+  if (error) {
+    isSigningUp = false;
+    setAuthLoading(false);
+    errEl.textContent = error.message;
+    errEl.classList.remove('hidden');
+    return;
+  }
+  // Save name to user_settings immediately
+  if (data.user) {
+    store.set('profile', {name, email});
+    await sb.from('user_settings').upsert({user_id: data.user.id, name, areas: DEFAULT_AREAS, goals: DEFAULT_GOALS, appearance:'dark'});
+  }
+  isSigningUp = false;
+  setAuthLoading(false);
+  // If email confirmation is off, Supabase signs them in immediately — go straight to app
+  // If email confirmation is on, show the "check your email" screen
+  if (data.session) {
+    currentUser = data.user;
+    await loadUserData();
+    showApp();
+  } else {
+    document.getElementById('authSignUp').style.display = 'none';
+    document.querySelector('.auth-tabs').style.display = 'none';
+    document.getElementById('checkEmailAddr').textContent = `We've sent a confirmation link to ${email}.`;
+    document.getElementById('authCheckEmail').style.display = '';
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+}
+
+// ══ PROFILE ══
+function getProfile() {
+  return store.get('profile') || {name: '', email: currentUser?.email || ''};
+}
+
+async function saveProfileFromSettings() {
+  const name = document.getElementById('profileName').value.trim();
+  store.set('profile', {name, email: currentUser?.email || ''});
+  await saveSettings();
+  showSettingsToast();
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  const profile = getProfile();
+  const first = profile.name ? `, ${profile.name.split(' ')[0]}` : '';
+  if (h >= 5  && h < 12) return `Good morning${first}`;
+  if (h >= 12 && h < 17) return `Good afternoon${first}`;
+  if (h >= 17 && h < 21) return `Good evening${first}`;
+  return `Working late${first}`;
+}
+
+function renderHomeCard() {
+  const el = document.getElementById('homeCard');
+  if (!el) return;
+
+  const streak    = calculateStreak();
+  const week      = getWeekSessions();
+  const todaySess = getTodaySessions();
+  const weekHours = week.reduce((s,x) => s + x.hours, 0);
+  const todayHours= todaySess.reduce((s,x) => s + x.hours, 0);
+
+  // ── Last session nudge ──
+  let lastSessionNudge = '';
+  if (sessions.length > 0 && todaySess.length === 0) {
+    const last = new Date(sessions[0].date);
+    const daysSince = Math.floor((Date.now() - last) / 86400000);
+    if (daysSince === 1) lastSessionNudge = 'You worked yesterday. Today can be just 5 minutes.';
+    else if (daysSince === 2) lastSessionNudge = 'It\'s been a couple of days. Whenever you\'re ready.';
+    else if (daysSince >= 3) lastSessionNudge = 'Been a while. Starting is the hardest part.';
+  }
+
+  // ── Sub-line ──
+  let subLine;
+  if (streak >= 3) {
+    subLine = `🔥 ${streak}-day streak — you're on a roll.`;
+  } else if (streak > 0) {
+    subLine = `🔥 ${streak}-day streak — keep it going.`;
+  } else if (todaySess.length > 0) {
+    subLine = `You've logged ${todayHours.toFixed(1)}h today. Keep the momentum.`;
+  } else if (week.length > 0) {
+    subLine = lastSessionNudge || `${weekHours.toFixed(1)}h this week. Today's session is waiting.`;
+  } else {
+    subLine = 'Pick a focus area below and start when you\'re ready.';
+  }
+
+  // ── Area nudge ──
+  let nudge = '';
+  const areaProgress = AREAS.map(area => {
+    const done = week.filter(s => s.area === area.name).reduce((s,x) => s + x.hours, 0);
+    const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name] || {weekly:10}).weekly;
+    return { area, done, goal, pct: goal > 0 ? done / goal : 0 };
+  });
+  const behind = areaProgress.filter(x => x.pct < 1).sort((a,b) => a.pct - b.pct)[0];
+  if (behind && week.length > 0) {
+    const left = Math.max(0, behind.goal - behind.done).toFixed(1);
+    nudge = `${behind.area.icon} ${behind.area.name} is ${behind.done === 0 ? 'untouched this week' : `${left}h short of your weekly goal`}.`;
+  }
+
+  // ── Recent sessions ──
+  const recentHTML = sessions.length
+    ? '<div class="recent-header">Recent Sessions</div>' +
+      sessions.slice(0, 3).map(s => {
+        const area = AREAS.find(a => a.name === s.area) || {icon:'', color:'#667eea', name: s.area};
+        const d = new Date(s.date);
+        const dateStr = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
+        return `<div class="recent-entry" style="border-left-color:${area.color}">
+          <span class="recent-area">${area.icon} ${s.area}</span>
+          <span class="recent-task">${s.task || '—'}</span>
+          <span class="recent-meta">${s.hours.toFixed(1)}h &nbsp;·&nbsp; ${dateStr}</span>
+        </div>`;
+      }).join('')
+    : '';
+
+  // ── Quick-start banner (first session of the day) ──
+  let quickBannerHTML = '';
+  if (todaySess.length === 0) {
+    const week2 = getWeekSessions();
+    const mostBehind = AREAS.map(area => {
+      const done = week2.filter(s => s.area === area.name).reduce((s,x) => s + x.hours, 0);
+      const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name] || {weekly:10}).weekly;
+      return { area, done, goal, pct: done / goal };
+    }).sort((a,b) => a.pct - b.pct)[0];
+    const suggestedArea = mostBehind ? mostBehind.area : AREAS[0];
+    quickBannerHTML = `
+      <div class="quick-start-banner" onclick="quickStart()">
+        <div class="quick-start-text">
+          <div class="quick-start-label">⚡ Quick start</div>
+          <div class="quick-start-heading">Just 5 minutes is enough.</div>
+          <div class="quick-start-area">Suggested: ${suggestedArea.name}</div>
+        </div>
+        <div class="quick-start-cta">Let's go →</div>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="home-card-title">${getGreeting()}</div>
+    <div class="home-card-desc">${subLine}</div>
+    ${nudge ? `<div class="home-card-nudge">${nudge}</div>` : ''}
+    ${recentHTML}`;
+
+  // Insert banner before home card (after it in the DOM)
+  const existingBanner = document.getElementById('quickStartBanner');
+  if (existingBanner) existingBanner.remove();
+  if (quickBannerHTML) {
+    const wrapper = document.createElement('div');
+    wrapper.id = 'quickStartBanner';
+    wrapper.innerHTML = quickBannerHTML;
+    el.parentNode.insertBefore(wrapper, el.nextSibling);
+  }
+}
+
+// ══ QUICK START ══
+function quickStart() {
+  // Pick most-behind area, default to first
+  const week = getWeekSessions();
+  const mostBehind = AREAS.map(area => {
+    const done = week.filter(s => s.area === area.name).reduce((s,x) => s + x.hours, 0);
+    const goal = (areaGoals[area.name] || DEFAULT_GOALS[area.name] || {weekly:10}).weekly;
+    return { area, pct: done / goal };
+  }).sort((a,b) => a.pct - b.pct)[0];
+  const area = mostBehind ? mostBehind.area : AREAS[0];
+  // Navigate carousel to that area
+  const idx = AREAS.findIndex(a => a.name === area.name);
+  if (idx >= 0) { carouselIndex = idx; renderCarouselCard(); renderCarouselDots(); }
+
+  // Open modal with 5-min preset and placeholder task
+  openSessionModal(area);
+  setTimeout(() => {
+    modalDuration = 5;
+    document.querySelectorAll('.timer-option').forEach(o => o.classList.remove('active'));
+    // pre-fill task so they can just hit go
+    const taskInput = document.getElementById('sessionTask');
+    if (taskInput && !taskInput.value) taskInput.placeholder = 'What are you working on? (optional)';
+    // add a subtle "just 5 min" label
+    const existing = document.getElementById('quickStartLabel');
+    if (!existing) {
+      const lbl = document.createElement('div');
+      lbl.id = 'quickStartLabel';
+      lbl.style.cssText = 'text-align:center;font-size:.8em;color:rgba(255,255,255,.45);margin-top:-8px;margin-bottom:12px';
+      lbl.textContent = '⚡ Quick 5-minute session — just enough to get started';
+      document.getElementById('sessionTask').parentNode.insertBefore(lbl, document.getElementById('sessionTask'));
+    }
+  }, 50);
+}
+
+// ══ SESSION MODAL ══
+function openSessionModal(area) {
+  const modal = document.getElementById('sessionModal');
+  document.getElementById('modalIcon').textContent = area.icon;
+  document.getElementById('modalAreaName').textContent = area.name;
+  document.getElementById('sessionTask').value = '';
+  document.getElementById('sessionNotes').value = '';
+  document.getElementById('modalStartBtn').style.background = area.color;
+
+  // Autocomplete from history
+  const datalist = document.getElementById('taskSuggestions');
+  datalist.innerHTML = '';
+  const recent = [...new Set(sessions.filter(s=>s.area===area.name && s.task).map(s=>s.task))].slice(0,8);
+  recent.forEach(t => { const o=document.createElement('option'); o.value=t; datalist.appendChild(o); });
+
+  // Store area for beginSession
+  modal.dataset.area = area.name;
+  modal.dataset.icon = area.icon;
+
+  // Reset duration to current selectedDuration
+  modalDuration = selectedDuration;
+  document.querySelectorAll('.duration-opt').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === modalDuration);
+  });
+
+  modal.classList.add('active');
+  setTimeout(() => document.getElementById('sessionTask').focus(), 320);
+}
+
+function closeSessionModal() {
+  document.getElementById('sessionModal').classList.remove('active');
+}
+
+function handleModalBackdrop(e) {
+  if (e.target === document.getElementById('sessionModal')) closeSessionModal();
+}
+
+function setModalDuration(mins, el) {
+  modalDuration = mins;
+  document.querySelectorAll('.duration-opt').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const ci = document.getElementById('modalCustom');
+  if (ci) ci.value = '';
+}
+
+function setCustomModalDuration(input) {
+  const mins = parseInt(input.value);
+  if (mins >= 1 && mins <= 240) {
+    modalDuration = mins;
+    document.querySelectorAll('.duration-opt').forEach(b => b.classList.remove('active'));
+  }
+}
+
+function setCustomTimerDuration(input) {
+  const mins = parseInt(input.value);
+  if (mins >= 1 && mins <= 240) {
+    document.querySelectorAll('.timer-option').forEach(o => o.classList.remove('active'));
+    selectedDuration = mins;
+    if (!isRunning) { timeRemaining = mins * 60; isWorkPhase = true; updateTimerDisplay(); updateTimerRing(); }
+  }
+}
+
+function beginSession() {
+  const modal   = document.getElementById('sessionModal');
+  const task    = document.getElementById('sessionTask').value.trim();
+  const notes   = document.getElementById('sessionNotes').value.trim();
+  const areaName = modal.dataset.area;
+  const areaIcon = modal.dataset.icon;
+
+  if (!task) { document.getElementById('sessionTask').focus(); return; }
+
+  activeArea = areaName;
+  activeTask = task;
+  selectedDuration = modalDuration;
+  sessionElapsed = 0;
+  sessionStartedAt = null;
+  pomodorosCompleted = 0;
+
+  // Pre-fill session notes into celebration
+  document.getElementById('celebNotes').value = notes;
+
+  // Setup timer
+  clearInterval(timerInterval);
+  isRunning = false; isWorkPhase = true;
+  timeRemaining = selectedDuration * 60;
+  updateTimerDisplay();
+  updateTimerRing();
+
+  // Update timer labels
+  document.getElementById('timerSessionLabel').textContent = `${areaIcon} ${areaName}`;
+  document.getElementById('timerTaskLabel').textContent = task;
+  document.getElementById('startBtn').textContent = 'Start';
+  const endBtn = document.getElementById('endSessionBtn');
+  if (endBtn) endBtn.style.display = 'block';
+
+  closeSessionModal();
+  // Show timer view in focus tab
+  selectedFocusArea = areaName;
+  document.getElementById('focusPreSession').style.display = 'none';
+  document.getElementById('focusTimerSection').style.display = '';
+  switchTab('focus', document.querySelector('[data-tab="focus"]'));
+}
+
+// ══ TIMER ══
+function setTimerDuration(mins, el) {
+  document.querySelectorAll('.timer-option').forEach(o => o.classList.remove('active'));
+  if (el) el.classList.add('active');
+  selectedDuration = mins;
+  const ci = document.getElementById('timerCustom');
+  if (ci) ci.value = '';
+  if (!isRunning) { timeRemaining = mins*60; isWorkPhase = true; updateTimerDisplay(); updateTimerRing(); }
+}
+
+function updateTimerRing() {
+  const ring = document.getElementById('timerRing');
+  if (!ring) return;
+  const total = isWorkPhase ? selectedDuration*60 : BREAK_TIME;
+  const p = timeRemaining / total;
+  const color     = p > 0.5 ? '#4ade80' : p > 0.2 ? '#fbbf24' : '#f87171';
+  const glowColor = p > 0.5 ? 'rgba(74,222,128,.22)'  : p > 0.2 ? 'rgba(251,191,36,.22)'  : 'rgba(248,113,113,.22)';
+  const glowDrop  = p > 0.5 ? '0 0 18px rgba(74,222,128,.7)'  : p > 0.2 ? '0 0 18px rgba(251,191,36,.7)'  : '0 0 18px rgba(248,113,113,.7)';
+  ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - p);
+  ring.style.stroke  = color;
+  ring.style.filter  = `drop-shadow(${glowDrop})`;
+  // Drive the radial background glow
+  const container = document.querySelector('.timer-container');
+  if (container) container.style.setProperty('--ring-glow-bg', glowColor);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timeRemaining/60);
+  const s = timeRemaining % 60;
+  document.getElementById('timerDisplay').textContent =
+    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('timerPhase').textContent = isWorkPhase ? '💼 Work Time' : '☕ Break Time';
+  updateTimerRing();
+}
+
+function toggleTimer() {
+  isRunning = !isRunning;
+  document.getElementById('startBtn').textContent = isRunning ? 'Pause' : 'Resume';
+  if (isRunning) {
+    initAudio();
+    requestNotificationPermission();
+    if (!sessionStartedAt) sessionStartedAt = Date.now();
+    timerStartTime = Date.now();
+    pausedTimeRemaining = timeRemaining;
+    timerInterval = setInterval(updateTimer, 1000);
+  } else {
+    clearInterval(timerInterval);
+    const elapsed = Math.floor((Date.now()-timerStartTime)/1000);
+    timeRemaining = Math.max(0, pausedTimeRemaining - elapsed);
+    if (isWorkPhase) sessionElapsed += elapsed;
+  }
+  updateSessionActiveUI();
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now()-timerStartTime)/1000);
+  timeRemaining = Math.max(0, pausedTimeRemaining - elapsed);
+  playTick();
+
+  if (timeRemaining <= 0) {
+    clearInterval(timerInterval);
+    isRunning = false;
+    if (isWorkPhase) sessionElapsed += Math.floor((Date.now()-timerStartTime)/1000);
+    playCompletionSound();
+    document.getElementById('startBtn').textContent = 'Start';
+    // Restore tabs as soon as timer ends
+    const tabBar = document.getElementById('tabBar');
+    if (tabBar) tabBar.classList.remove('focus-mode');
+
+    if (isWorkPhase) {
+      pomodorosCompleted++;
+      isWorkPhase = false;
+      timeRemaining = BREAK_TIME;
+      updateTimerDisplay();
+      sendTimerNotification(activeArea === 'Freeform' ? 'free focus' : `${selectedDuration} min`);
+      showCelebration(true);
+    } else {
+      isWorkPhase = true;
+      timeRemaining = selectedDuration * 60;
+      updateTimerDisplay();
+      sendTimerNotification('break');
+      showCelebration(false);
+    }
+  } else {
+    updateTimerDisplay();
+    updateSessionActiveUI();
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  isRunning = false; isWorkPhase = true;
+  timeRemaining = selectedDuration * 60;
+  pomodorosCompleted = 0; sessionElapsed = 0; sessionStartedAt = null;
+  activeArea = ''; activeTask = '';
+  updateTimerDisplay();
+  document.getElementById('startBtn').textContent = 'Start';
+  const endBtn = document.getElementById('endSessionBtn');
+  if (endBtn) endBtn.style.display = 'none';
+}
+
+function endSession() {
+  if (!activeArea) return;
+  clearInterval(timerInterval);
+  // If currently running, capture the in-progress elapsed time
+  if (isRunning && isWorkPhase) {
+    const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
+    sessionElapsed += elapsed;
+  }
+  isRunning = false;
+  document.getElementById('startBtn').textContent = 'Start';
+  const endBtn = document.getElementById('endSessionBtn');
+  if (endBtn) endBtn.style.display = 'none';
+  showCelebration(true);
+}
+
+function skipPhase() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  if (isWorkPhase) { sessionElapsed += Math.floor((Date.now()-(timerStartTime||Date.now()))/1000); }
+  isWorkPhase = !isWorkPhase;
+  timeRemaining = isWorkPhase ? selectedDuration*60 : BREAK_TIME;
+  updateTimerDisplay();
+  document.getElementById('startBtn').textContent = 'Start';
+}
+
+// ══ CELEBRATION ══
+function showCelebration(isWork) {
+  const overlay = document.getElementById('celebrationOverlay');
+  const workMins = Math.round(sessionElapsed / 60) || selectedDuration;
+
+  document.getElementById('celebEmoji').textContent = isWork ? '🎉' : '💪';
+  document.getElementById('celebTitle').textContent = isWork ? 'Session Complete!' : 'Break Over!';
+  document.getElementById('celebMsg').textContent = isWork
+    ? KUDOS[Math.floor(Math.random()*KUDOS.length)]
+    : 'Recharged and ready to go.';
+  document.getElementById('celebArea').textContent = activeArea || '—';
+  document.getElementById('celebTime').textContent = `${workMins}m`;
+  document.getElementById('celebPoms').textContent = pomodorosCompleted;
+
+  overlay.classList.remove('hidden');
+  requestAnimationFrame(() => overlay.classList.add('active'));
+  launchConfetti();
+}
+
+function closeCelebration() {
+  const o = document.getElementById('celebrationOverlay');
+  o.classList.remove('active');
+  setTimeout(() => o.classList.add('hidden'), 400);
+  if (confettiFrame) { cancelAnimationFrame(confettiFrame); confettiFrame = null; }
+}
+
+async function saveAndClose() {
+  const notes = document.getElementById('celebNotes').value.trim();
+  const workMins = Math.round(sessionElapsed / 60) || selectedDuration;
+  if (activeArea && currentUser) {
+    const newSession = {
+      area: activeArea,
+      task: activeTask,
+      hours: +(workMins / 60).toFixed(2),
+      notes,
+      date: new Date().toISOString(),
+      pomodoros: pomodorosCompleted
+    };
+    const { data, error } = await sb.from('sessions').insert({
+      user_id: currentUser.id,
+      ...newSession
+    }).select().single();
+
+    if (error) {
+      // Surface the error clearly — session won't survive a refresh
+      console.error('Session save failed:', error);
+      const errMsg = document.getElementById('celebSaveError');
+      if (errMsg) {
+        errMsg.textContent = `⚠️ Couldn't save to cloud: ${error.message}. Your session is shown here but may not persist after a refresh.`;
+        errMsg.style.display = 'block';
+      }
+    } else if (data) {
+      newSession.id = data.id;
+    }
+
+    const wasFirstToday = getTodaySessions().length === 0;
+    sessions.unshift(newSession);
+    // Cache locally as resilience backup
+    cacheSessionsLocally();
+
+    if (wasFirstToday) {
+      document.getElementById('celebEmoji').textContent = '🌟';
+      document.getElementById('celebTitle').textContent = 'First one of the day!';
+      document.getElementById('celebMsg').textContent = 'That\'s the hardest part done. Everything else is momentum.';
+      launchConfetti();
+    }
+
+    // If there was an error, keep the overlay open so user sees the warning
+    if (error) return;
+  }
+  document.getElementById('celebNotes').value = '';
+  closeCelebration();
+  sessionElapsed = 0; pomodorosCompleted = 0;
+  activeArea = ''; activeTask = '';
+  const endBtn = document.getElementById('endSessionBtn');
+  if (endBtn) endBtn.style.display = 'none';
+  resetFocusToPreSession();
+}
+
+function cacheSessionsLocally() {
+  // Keep last 100 sessions in localStorage as a fallback if Supabase is unavailable
+  store.set('sessions_cache', sessions.slice(0, 100));
+}
+
+function startBreakFromCeleb() {
+  // save first
+  saveAndClose();
+  isWorkPhase = false;
+  timeRemaining = BREAK_TIME;
+  updateTimerDisplay();
+  isRunning = true;
+  document.getElementById('startBtn').textContent = 'Pause';
+  timerStartTime = Date.now();
+  pausedTimeRemaining = timeRemaining;
+  timerInterval = setInterval(updateTimer, 1000);
+}
+
+// ══ CONFETTI ══
+function launchConfetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const colors = ['#667eea','#764ba2','#f093fb','#ffd700','#ff6b6b','#4ecdc4','#a8edea','#ffffff'];
+  const particles = Array.from({length:120}, () => ({
+    x:Math.random()*canvas.width, y:-10-Math.random()*160,
+    w:7+Math.random()*9, h:4+Math.random()*5,
+    color:colors[Math.floor(Math.random()*colors.length)],
+    rot:Math.random()*360, rotV:(Math.random()-.5)*9,
+    vx:(Math.random()-.5)*3.5, vy:2+Math.random()*3.5, opacity:1
+  }));
+  function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x+=p.vx; p.y+=p.vy; p.vy+=.06; p.rot+=p.rotV;
+      if (p.y > canvas.height*.75) p.opacity=Math.max(0,p.opacity-.025);
+      if (p.opacity>0 && p.y<canvas.height+20) alive=true;
+      ctx.save(); ctx.globalAlpha=p.opacity;
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if (alive) confettiFrame=requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ══ PROGRESS ══
+function renderProgress() {
+  renderWeeklyProgress();
+  renderMonthlyProgress();
+}
+
+function renderWeeklyProgress() {
+  const week = getWeekSessions();
+  const bars = document.getElementById('weeklyProgressBars');
+  bars.innerHTML = '';
+  AREAS.forEach(area => {
+    const done = week.filter(s=>s.area===area.name).reduce((s,x)=>s+x.hours,0);
+    const goal = (areaGoals[area.name]||DEFAULT_GOALS[area.name]).weekly;
+    const pct  = Math.min((done/goal)*100,100);
+    const el = document.createElement('div');
+    el.className = 'progress-item';
+    el.style.borderLeftColor = area.color;
+    el.innerHTML = `
+      <div class="progress-header"><strong>${area.icon} ${area.name}</strong><span>${done.toFixed(1)}h / ${goal}h</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${area.color}">${pct>=18?pct.toFixed(0)+'%':''}</div></div>`;
+    bars.appendChild(el);
+  });
+}
+
+function renderMonthlyProgress() {
+  const now = new Date();
+  const chart = document.getElementById('monthlyChart');
+  chart.innerHTML = '';
+  const maxH = Math.max(...AREAS.map(a=>(areaGoals[a.name]||DEFAULT_GOALS[a.name]).monthly), 1);
+  AREAS.forEach(area => {
+    const done = sessions.filter(s=>{
+      const days=Math.floor((now-new Date(s.date))/86400000);
+      return s.area===area.name && days<30;
+    }).reduce((s,x)=>s+x.hours,0);
+    const pct = (done/maxH)*100;
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    bar.style.height = `${Math.max(pct,4)}%`;
+    bar.style.background = area.color;
+    bar.title = `${area.name}: ${done.toFixed(1)}h`;
+    bar.innerHTML = `<div class="chart-bar-value">${done.toFixed(1)}h</div><div class="chart-bar-label">${area.icon} ${area.name}</div>`;
+    chart.appendChild(bar);
+  });
+}
+
+// ══ HISTORY ══
+function renderHistory() {
+  const log = document.getElementById('sessionLog');
+  if (!sessions.length) {
+    log.innerHTML = '<div class="log-empty">No sessions yet. Start one from Focus.</div>';
+    return;
+  }
+  log.innerHTML = '';
+  const getArea = name => AREAS.find(a => a.name === name);
+
+  // Group sessions by local date, most recent first
+  const groups = new Map();
+  sessions.slice().forEach(s => {
+    const d = new Date(s.date);
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    const isSameDay = (a, b) => a.toDateString() === b.toDateString();
+    let label;
+    if (isSameDay(d, today)) label = 'Today';
+    else if (isSameDay(d, yesterday)) label = 'Yesterday';
+    else label = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(s);
+  });
+
+  let first = true;
+  groups.forEach((daySessions, dateLabel) => {
+    const totalHours = daySessions.reduce((sum, s) => sum + s.hours, 0);
+    const count = daySessions.length;
+
+    const accordion = document.createElement('div');
+    accordion.className = `log-accordion${first ? ' open' : ''}`;
+    accordion.innerHTML = `
+      <div class="log-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="log-accordion-date">${dateLabel}</span>
+        <div class="log-accordion-meta">
+          <span>${totalHours.toFixed(1)}h · ${count} session${count !== 1 ? 's' : ''}</span>
+          <span class="log-accordion-arrow">▼</span>
+        </div>
+      </div>
+      <div class="log-accordion-body"></div>`;
+
+    const body = accordion.querySelector('.log-accordion-body');
+    daySessions.forEach(s => {
+      const a = getArea(s.area);
+      const color = a ? a.color : '#667eea';
+      const d = new Date(s.date);
+      const el = document.createElement('div');
+      el.className = 'log-entry';
+      el.style.borderLeftColor = color;
+      el.innerHTML = `
+        <div class="log-header">
+          <span>${a ? a.icon : '🪨'} ${s.area}</span>
+          <span>${s.hours.toFixed(1)}h &nbsp;·&nbsp; ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+        </div>
+        ${s.task ? `<div class="log-task">${s.task}</div>` : ''}
+        ${s.notes ? `<div class="log-notes">${s.notes}</div>` : ''}
+        ${s.pomodoros ? `<div style="margin-top:5px;font-size:.82em;font-weight:700;color:${color}">🍅 ${s.pomodoros} pomodoro${s.pomodoros > 1 ? 's' : ''}</div>` : ''}`;
+      body.appendChild(el);
+    });
+
+    log.appendChild(accordion);
+    first = false;
+  });
+}
+
+// ══ SAVE SETTINGS (always writes full state — prevents partial-upsert resets) ══
+async function saveSettings() {
+  if (!currentUser) return;
+  const profile = store.get('profile') || {};
+  const { error } = await sb.from('user_settings').upsert({
+    user_id:    currentUser.id,
+    name:       profile.name || '',
+    areas:      AREAS,
+    goals:      areaGoals,
+    appearance: store.get('appearance') || 'dark',
+    theme:      store.get('theme') || null,
+    updated_at: new Date().toISOString()
+  });
+  if (error) console.error('saveSettings error:', error);
+}
+
+// ══ SETTINGS ══
+function renderSettings() {
+  // Profile
+  const profile = getProfile();
+  const pn = document.getElementById('profileName');
+  const pe = document.getElementById('profileEmail');
+  if (pn) pn.value = profile.name || '';
+  if (pe) pe.value = profile.email || '';
+  renderAreaEditGrid();
+  renderGoalGrid();
+  renderColorOptions();
+  renderAreaResetGrid();
+  // Sync appearance buttons
+  const mode = store.get('appearance') || 'dark';
+  const btnDark = document.getElementById('btnDark');
+  const btnLight = document.getElementById('btnLight');
+  if (btnDark) btnDark.classList.toggle('active', mode === 'dark');
+  if (btnLight) btnLight.classList.toggle('active', mode === 'light');
+}
+
+function renderGoalGrid() {
+  const grid = document.getElementById('goalGrid');
+  grid.innerHTML = '';
+  AREAS.forEach(area => {
+    const g = areaGoals[area.name] || DEFAULT_GOALS[area.name];
+    const card = document.createElement('div');
+    card.className = 'goal-card';
+    card.style.setProperty('--accent', area.color);
+    card.style.borderTopColor = area.color;
+    card.innerHTML = `
+      <div class="goal-card-name" style="color:${area.color}">${area.icon} ${area.name}</div>
+      <div class="goal-row"><label>Weekly hours</label><input type="number" id="goal-w-${area.name}" value="${g.weekly}" min="1" step=".5"></div>
+      <div class="goal-row"><label>Monthly hours</label><input type="number" id="goal-m-${area.name}" value="${g.monthly}" min="1" step="1"></div>`;
+    grid.appendChild(card);
+  });
+}
+
+async function saveGoals() {
+  AREAS.forEach(area => {
+    const w = parseFloat(document.getElementById(`goal-w-${area.name}`).value);
+    const m = parseFloat(document.getElementById(`goal-m-${area.name}`).value);
+    if (w > 0 && m > 0) areaGoals[area.name] = {weekly:w, monthly:m};
+  });
+  await saveSettings();
+  showSettingsToast();
+}
+
+function renderAreaEditGrid() {
+  const grid = document.getElementById('areaEditGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  AREAS.forEach((area, i) => {
+    const card = document.createElement('div');
+    card.className = 'area-edit-card';
+    card.style.borderTopColor = area.color;
+    card.draggable = true;
+    card.dataset.idx = i;
+    card.innerHTML = `
+      <div class="drag-handle">⠿ ⠿ ⠿</div>
+      <div class="area-edit-icon-preview">
+        <button class="emoji-picker-btn" onclick="openEmojiPicker(${i})" title="Change emoji" aria-label="Change emoji for ${area.name}">
+          ${area.icon}<em class="ep-edit">✏️</em>
+        </button>
+      </div>
+      <div class="goal-row"><label>Name</label>
+        <input type="text" id="aed-name-${i}" value="${area.name}" maxlength="20" style="flex:1;text-align:left">
+      </div>
+      <div class="goal-row"><label>Colour</label>
+        <input type="color" id="aed-color-${i}" value="${area.color}">
+      </div>`;
+    card.addEventListener('dragstart', e => {
+      dragAreaSrc = i;
+      setTimeout(() => card.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      grid.querySelectorAll('.area-edit-card').forEach(c => c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      grid.querySelectorAll('.area-edit-card').forEach(c => c.classList.remove('drag-over'));
+      if (dragAreaSrc !== i) card.classList.add('drag-over');
+    });
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragAreaSrc === null || dragAreaSrc === i) return;
+      // Capture current edited values before reordering
+      const edited = AREAS.map((a, j) => ({
+        name:  document.getElementById(`aed-name-${j}`)?.value.trim()  || a.name,
+        icon:  a.icon,  // icon is managed directly on AREAS[j] via emoji picker
+        color: document.getElementById(`aed-color-${j}`)?.value        || a.color
+      }));
+      const [moved] = edited.splice(dragAreaSrc, 1);
+      edited.splice(i, 0, moved);
+      AREAS = edited;
+      dragAreaSrc = null;
+      renderAreaEditGrid();
+    });
+    grid.appendChild(card);
+  });
+}
+
+async function saveAreas() {
+  const oldNames = AREAS.map(a => a.name);
+  const newAreas = AREAS.map((area, i) => ({
+    name:  (document.getElementById(`aed-name-${i}`)?.value.trim()  || area.name),
+    icon:  area.icon,  // icon is set directly via emoji picker and already on AREAS[i]
+    color: document.getElementById(`aed-color-${i}`)?.value || area.color
+  }));
+  const newGoals = {};
+  newAreas.forEach((area, i) => {
+    const old = oldNames[i];
+    newGoals[area.name] = areaGoals[old] || DEFAULT_GOALS[old] || {weekly:10, monthly:40};
+  });
+  areaGoals = newGoals;
+  AREAS = newAreas;
+  await saveSettings();
+  showSettingsToast();
+}
+
+function renderColorOptions() {
+  const c = document.getElementById('colorOptions');
+  c.innerHTML = '';
+  COLOR_THEMES.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'color-option';
+    el.style.background = t.primary;
+    el.textContent = t.name;
+    el.onclick = async () => {
+      document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+      applyTheme(t); store.set('theme', t);
+      await saveSettings();
+      showSettingsToast();
+    };
+    c.appendChild(el);
+  });
+}
+
+// ══ SETTINGS TOAST ══
+let toastTimer = null;
+function showSettingsToast() {
+  const toast = document.getElementById('settingsToast');
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(dismissToast, 6000);
+}
+function dismissToast() {
+  document.getElementById('settingsToast').classList.remove('visible');
+  clearTimeout(toastTimer);
+}
+function toastGoHome() {
+  dismissToast();
+  switchTab('focus', document.querySelector('[data-tab="focus"]'));
+}
+
+function applyTheme(t) {
+  const r = document.documentElement.style;
+  r.setProperty('--primary', t.primary);
+  r.setProperty('--primary-dark', t.primaryDark || t.primary);
+  r.setProperty('--secondary', t.secondary || t.primary);
+}
+
+// ══ APPEARANCE ══
+async function setAppearance(mode) {
+  if (mode === 'light') document.body.classList.add('light-mode');
+  else document.body.classList.remove('light-mode');
+  store.set('appearance', mode);
+  const btnDark = document.getElementById('btnDark');
+  const btnLight = document.getElementById('btnLight');
+  if (btnDark) btnDark.classList.toggle('active', mode === 'dark');
+  if (btnLight) btnLight.classList.toggle('active', mode === 'light');
+  await saveSettings();
+}
+
+function renderAreaResetGrid() {
+  const grid = document.getElementById('areaResetGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  AREAS.forEach(area => {
+    const count = sessions.filter(s => s.area === area.name).length;
+    const btn = document.createElement('button');
+    btn.className = 'btn-area-reset';
+    btn.style.borderColor = area.color;
+    btn.style.color = area.color;
+    btn.textContent = `${area.icon} ${area.name} (${count})`;
+    btn.onclick = () => resetAreaData(area.name);
+    grid.appendChild(btn);
+  });
+}
+
+async function resetAreaData(areaName) {
+  const count = sessions.filter(s => s.area === areaName).length;
+  if (!count) { alert(`No sessions logged for ${areaName}.`); return; }
+  if (confirm(`Delete all ${count} session${count > 1 ? 's' : ''} for ${areaName}? This cannot be undone.`)) {
+    if (currentUser) {
+      await sb.from('sessions').delete().eq('user_id', currentUser.id).eq('area', areaName);
+    }
+    sessions = sessions.filter(s => s.area !== areaName);
+    renderHome();
+    renderAreaResetGrid();
+  }
+}
+
+async function resetAllData() {
+  if (confirm('Delete ALL session data? This cannot be undone.')) {
+    if (confirm('Permanently remove all logged sessions?')) {
+      if (currentUser) {
+        await sb.from('sessions').delete().eq('user_id', currentUser.id);
+      }
+      sessions = [];
+      renderHome(); renderHistory();
+      alert('All session data reset.');
+    }
+  }
+}
+
+// ══ EXPORT HISTORY ══
+function downloadHistory() {
+  if (!sessions.length) { alert('No sessions to export yet.'); return; }
+  const headers = ['Date', 'Time', 'Area', 'Task', 'Duration (h)', 'Notes', 'Pomodoros'];
+  const esc = v => `"${String(v || '').replace(/"/g, '""')}"`;
+  const rows = sessions.slice().reverse().map(s => {
+    const d = new Date(s.date);
+    return [
+      d.toLocaleDateString('en-GB'),
+      d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+      esc(s.area),
+      esc(s.task),
+      s.hours.toFixed(2),
+      esc(s.notes),
+      s.pomodoros || 0
+    ].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pebbl-history-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ══ AUDIO ══
+function initAudio() {
+  if (!audioContext) audioContext = new (window.AudioContext||window.webkitAudioContext)();
+  if (audioContext.state==='suspended') audioContext.resume();
+}
+function _tone(freq, dur, vol=0.08) {
+  try {
+    const osc=audioContext.createOscillator(), g=audioContext.createGain();
+    osc.connect(g); g.connect(audioContext.destination);
+    osc.frequency.value=freq; osc.type='sine';
+    g.gain.setValueAtTime(vol, audioContext.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime+dur);
+    osc.start(audioContext.currentTime); osc.stop(audioContext.currentTime+dur);
+  } catch(e){}
+}
+function playTick() { if (soundEnabled) { initAudio(); _tone(600,.08,.08) } }
+function playCompletionSound() {
+  if (!soundEnabled) return;
+  initAudio();
+  [[0,800],[.15,600],[.3,400]].forEach(([t,f]) => {
+    const osc=audioContext.createOscillator(), g=audioContext.createGain();
+    osc.connect(g); g.connect(audioContext.destination);
+    osc.frequency.value=f; osc.type='sine';
+    const st=audioContext.currentTime+t;
+    g.gain.setValueAtTime(0.2,st); g.gain.exponentialRampToValueAtTime(0.01,st+.5);
+    osc.start(st); osc.stop(st+.5);
+  });
+}
+function toggleSound() {
+  soundEnabled = document.getElementById('soundToggle').checked;
+  if (soundEnabled) { initAudio(); playTick(); }
+}
+
+// ── EMOJI PICKER ──
+let _epTargetIdx = null;
+
+function openEmojiPicker(idx) {
+  _epTargetIdx = idx;
+  const currentEmoji = AREAS[idx]?.icon || '';
+  const grid = document.getElementById('emojiPickerGrid');
+  grid.innerHTML = '';
+  EMOJI_SETS.forEach(({cat, emojis}) => {
+    const lbl = document.createElement('div');
+    lbl.className = 'emoji-cat-label';
+    lbl.textContent = cat;
+    grid.appendChild(lbl);
+    emojis.forEach(em => {
+      const btn = document.createElement('button');
+      btn.className = 'emoji-picker-cell' + (em === currentEmoji ? ' ep-selected' : '');
+      btn.textContent = em;
+      btn.setAttribute('aria-label', em);
+      btn.onclick = () => selectEmoji(em);
+      grid.appendChild(btn);
+    });
+  });
+  const overlay = document.getElementById('emojiPickerOverlay');
+  overlay.style.display = 'flex';
+}
+
+function closeEmojiPicker() {
+  document.getElementById('emojiPickerOverlay').style.display = 'none';
+  _epTargetIdx = null;
+}
+
+async function selectEmoji(emoji) {
+  if (_epTargetIdx === null) return;
+  const i = _epTargetIdx;
+  // Capture any unsaved name/color changes on the card too
+  const name  = document.getElementById(`aed-name-${i}`)?.value.trim()  || AREAS[i].name;
+  const color = document.getElementById(`aed-color-${i}`)?.value        || AREAS[i].color;
+  AREAS[i] = { name, icon: emoji, color };
+  closeEmojiPicker();
+  // Persist immediately to Supabase — no Save button needed
+  await saveSettings();
+  renderAreaEditGrid();
+  showSettingsToast();
+}
+
+// ── START ──
+init();
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+</script>
+<!-- Emoji Picker -->
+<div id="emojiPickerOverlay" style="display:none;position:fixed;inset:0;z-index:9000;align-items:flex-end;background:rgba(0,0,0,.55)" onclick="if(event.target===this)closeEmojiPicker()">
+  <div class="emoji-picker-sheet">
+    <div class="emoji-picker-header">
+      <span class="emoji-picker-title">Pick an emoji</span>
+      <button class="emoji-picker-close" onclick="closeEmojiPicker()" aria-label="Close">✕</button>
+    </div>
+    <div class="emoji-picker-grid" id="emojiPickerGrid"></div>
+  </div>
+</div>
 </body>
 </html>
